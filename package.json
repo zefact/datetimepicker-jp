@@ -1,0 +1,46 @@
+{
+  "name": "@zefact/datetimepicker-jp",
+  "version": "0.0.1",
+  "description": "カレンダー",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build && vite build --mode development && vite build --mode css && vite build --mode minifycss && tsc -d",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zefact/datetimepicker-jp.git"
+  },
+  "keywords": [
+    "javascript",
+    "日本",
+    "祝日"
+  ],
+  "author": "ZEFACT Co., Ltd.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zefact/datetimepicker-jp/issues"
+  },
+  "homepage": "https://github.com/zefact/datetimepicker-jp#readme",
+  "devDependencies": {
+    "@rollup/plugin-alias": "^5.0.0",
+    "@rollup/plugin-typescript": "^11.1.1",
+    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/parser": "^5.59.8",
+    "autoprefixer": "^10.4.14",
+    "eslint": "^8.41.0",
+    "eslint-config-prettier": "^8.8.0",
+    "postcss": "^8.4.24",
+    "prettier": "^2.8.8",
+    "sass": "^1.62.1",
+    "typescript": "^5.0.2",
+    "vite": "^4.3.9"
+  },
+  "dependencies": {
+    "@zefact/holidays-jp": "^1.0.0",
+    "moment": "^2.29.4"
+  }
+}

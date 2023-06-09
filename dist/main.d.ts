@@ -1,0 +1,44 @@
+type Options = {
+    pickDate: boolean;
+    pickTime: boolean;
+    startDate: any;
+    endDate: any;
+    viewMode: number;
+    startViewMode: number;
+    minViewMode: number;
+    element?: HTMLElement;
+    widget?: HTMLElement;
+    weekStart: number;
+    viewDate: any;
+    isInput: boolean;
+    workingHolidays?: Definition[];
+};
+import { Definition } from '@zefact/holidays-jp/dist/type';
+export default class DateTimePicker {
+    private options;
+    private JpDates;
+    private currentDate;
+    constructor(selector: string, options?: Partial<Options>);
+    init(element: HTMLElement, options?: Partial<Options>): void;
+    setTemplate(): HTMLElement;
+    getTimePickerTemplate(): string;
+    getDatePickerTemplate(): string;
+    showMode(dir?: number): void;
+    getDaysInMonth(year: number, month: number): number;
+    formatDate(date: Date): string;
+    parseDateStringToDate(dateString: string): Date;
+    private readonly _confirmFormatDate;
+    fillDow(): void;
+    fillMonths(): void;
+    fillDate(): void;
+    insertHolidays(holidays: Definition[]): void;
+    insertDateIntoInput(): void;
+    _attachDatePickerEvents(): void;
+    clickEvent(e: Event): void;
+    stopEvent(e: Event): void;
+    focusEvent(): void;
+    focusoutEvent(): void;
+    changeEvent(): void;
+    place(): void;
+}
+export {};
