@@ -14,15 +14,15 @@ type Options = {
   workingHolidays?: Definition[];
 };
 
-import HolidaysJP from '@zefact/holidays-jp';
 import moment from 'moment';
+import HolidaysJP from '@zefact/holidays-jp';
 import { Definition } from '@zefact/holidays-jp/dist/type';
 import { Definitions } from '@zefact/holidays-jp/dist/type';
 
 export default class DateTimePicker {
   private options: Options = {
-    pickDate: false,
-    pickTime: true,
+    pickDate: true,
+    pickTime: false,
     startDate: '2000/1/1',
     endDate: '2100/12/31',
     viewMode: 0,
@@ -72,6 +72,7 @@ export default class DateTimePicker {
       this.options.endDate = this.parseDateStringToDate(this.options.endDate);
     this.fillDow();
     this.fillMonths();
+    // this.fillHours();
     this.showMode();
     this._attachDatePickerEvents();
     this.fillDate();
@@ -127,11 +128,11 @@ export default class DateTimePicker {
       '<div class="timepicker-picker">' +
       '<table class="table-condensed">' +
       '<tr>' +
-      '<td><a class="btn" data-action="incrementHours"></a></td>' +
+      '<td><a class="btn" data-action="incrementHours">&#9650;</a></td>' +
       '<td class="separator"></td>' +
-      '<td><a class="btn" data-action="incrementMinutes"></a></td>' +
+      '<td><a class="btn" data-action="incrementMinutes">&#9650;</a></td>' +
       '<td class="separator"></td>' +
-      '<td><a class="btn" data-action="incrementSeconds"></a></td>' +
+      '<td><a class="btn" data-action="incrementSeconds">&#9650;</a></td>' +
       '</tr>' +
       '<tr>' +
       '<td>' +
@@ -166,7 +167,6 @@ export default class DateTimePicker {
       '<table class="table-condensed">' +
       '</table>' +
       '</div>';
-
     return template;
   }
 
@@ -201,7 +201,6 @@ export default class DateTimePicker {
       contentTemplate +
       '</table>' +
       '</div>';
-
     return template;
   }
 
@@ -252,6 +251,11 @@ export default class DateTimePicker {
       return momentDate.toDate();
     }
     throw new Error('オプションに設定された日付のフォーマットが正しくありません。');
+  }
+
+  padLeft(s: string, l: number, c: string) {
+    if (l < s.length) return s;
+    else return Array(l - s.length + 1).join(c || ' ') + s;
   }
 
   private readonly _confirmFormatDate = new RegExp(`^[0-9]{4}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])$`);
@@ -426,6 +430,21 @@ export default class DateTimePicker {
       }
     }
   }
+
+  // fillHours() {
+  //   let table = this.options.widget!.querySelector('.timepicker .timepicker-hours table');
+  //   let html: string = '';
+  //   let current: number = 0;
+  //   for (let i = 0; i < 4; i += 1) {
+  //     html += '<tr>';
+  //     for (let j = 0; j < 4; j += 1) {
+  //       let c: string = current.toString();
+  //       html += '<td class="hour">' + this.padLeft(c, 2, '0') + '<td>';
+  //     }
+  //     html += '</tr>';
+  //   }
+  //   table!.innerHTML = html;
+  // }
 
   insertHolidays(holidays: Definition[]) {
     const workingHolidays: Definitions = holidays;

@@ -6,239 +6,6 @@ var __publicField = (obj, key, value) => {
   return value;
 };
 
-  const definitions = [
-    [1, "元日", 1, 1, 1949],
-    [1, "成人の日", 1, 15, 1949, 1999],
-    [2, "成人の日", 1, [2, 1], 2e3],
-    [1, "建国記念の日", 2, 11, 1967],
-    [1, "天皇誕生日", 2, 23, 2020],
-    [1, "昭和天皇の大喪の礼", 2, 24, 1989, 1989],
-    [3, "春分の日"],
-    [1, "皇太子明仁親王の結婚の儀", 4, 10, 1959, 1959],
-    [1, "天皇誕生日", 4, 29, 1949, 1988],
-    [1, "みどりの日", 4, 29, 1989, 2006],
-    [1, "昭和の日", 4, 29, 2007],
-    [1, "即位の日", 5, 1, 2019, 2019],
-    [1, "憲法記念日", 5, 3, 1949],
-    [1, "みどりの日", 5, 4, 2007],
-    [1, "こどもの日", 5, 5, 1949],
-    [1, "皇太子徳仁親王の結婚の儀", 6, 9, 1993, 1993],
-    [1, "海の日", 7, 20, 1996, 2002],
-    [2, "海の日", 7, [3, 1], 2003, 2019],
-    [1, "海の日", 7, 23, 2020, 2020],
-    [1, "海の日", 7, 22, 2021, 2021],
-    [2, "海の日", 7, [3, 1], 2022],
-    [1, "山の日", 8, 11, 2016, 2019],
-    [1, "山の日", 8, 10, 2020, 2020],
-    [1, "山の日", 8, 8, 2021, 2021],
-    [1, "山の日", 8, 11, 2022],
-    [1, "敬老の日", 9, 15, 1966, 2002],
-    [2, "敬老の日", 9, [3, 1], 2003],
-    [4, "秋分の日"],
-    [1, "体育の日", 10, 10, 1966, 1999],
-    [2, "体育の日", 10, [2, 1], 2e3, 2019],
-    [1, "スポーツの日", 7, 24, 2020, 2020],
-    [1, "スポーツの日", 7, 23, 2021, 2021],
-    [2, "スポーツの日", 10, [2, 1], 2022],
-    [1, "即位礼正殿の儀", 10, 22, 2019, 2019],
-    [1, "文化の日", 11, 3, 1948],
-    [1, "即位礼正殿の儀", 11, 12, 1990, 1990],
-    [1, "勤労感謝の日", 11, 23, 1948],
-    [1, "天皇誕生日", 12, 23, 1989, 2018]
-  ];
-  let _workingDefinitions = [];
-  const _isHolidayOnly = (targetDate) => {
-    let holiday = "";
-    for (let def of definitions) {
-      if (def[4] && targetDate.getFullYear() < def[4])
-        continue;
-      if (def[5] && def[5] < targetDate.getFullYear())
-        continue;
-      if (def[0] === 3 && targetDate.getFullYear() <= 1948)
-        continue;
-      if (def[0] === 4 && targetDate.getFullYear() < 1948)
-        continue;
-      if (def[0] === 1) {
-        holiday = simpleHoliday(targetDate, def);
-        if (holiday)
-          break;
-      }
-      if (def[0] === 2) {
-        holiday = nthWeek(targetDate, def);
-        if (holiday)
-          break;
-      }
-      if (def[0] === 3) {
-        holiday = syunbun(targetDate, def);
-        if (holiday)
-          break;
-      }
-      if (def[0] === 4) {
-        holiday = syuubun(targetDate, def);
-        if (holiday)
-          break;
-      }
-    }
-    return holiday;
-  };
-  const _isWorkingHoliday = (targetDate) => {
-    let workingHoliday = "";
-    for (let def of _workingDefinitions) {
-      if (def[4] && targetDate.getFullYear() < def[4])
-        continue;
-      if (def[5] && def[5] < targetDate.getFullYear())
-        continue;
-      if (def[0] === 1) {
-        workingHoliday = simpleHoliday(targetDate, def);
-        if (workingHoliday)
-          break;
-      }
-      if (def[0] === 2) {
-        workingHoliday = nthWeek(targetDate, def);
-        if (workingHoliday)
-          break;
-      }
-      if (def[0] === 9) {
-        workingHoliday = arrayHoliday(targetDate, def);
-        if (workingHoliday)
-          break;
-      }
-    }
-    return workingHoliday;
-  };
-  const simpleHoliday = (targetDate, definition) => {
-    if (targetDate.getMonth() + 1 !== definition[2])
-      return "";
-    if (targetDate.getDate() !== definition[3])
-      return "";
-    return definition[1];
-  };
-  const nthWeek = (targetDate, definition) => {
-    const compDate = getNthWeekDay(
-      targetDate.getFullYear(),
-      definition[2],
-      definition[3][0],
-      definition[3][1]
-    );
-    if (targetDate.getMonth() !== compDate.getMonth())
-      return "";
-    if (targetDate.getDate() !== compDate.getDate())
-      return "";
-    return definition[1];
-  };
-  const syunbun = (targetDate, definition) => {
-    if (targetDate.getMonth() + 1 !== 3)
-      return "";
-    if (targetDate.getFullYear() <= 1948)
-      return "";
-    if (targetDate.getFullYear() < 1980) {
-      const _20 = [1960, 1964, 1968, 1972, 1976];
-      if (targetDate.getDate() === 20 && _20.includes(targetDate.getFullYear())) {
-        return definition[1];
-      } else if (targetDate.getDate() === 21) {
-        return definition[1];
-      }
-      return "";
-    }
-    const d = Math.floor(20.8431 + 0.242194 * (targetDate.getFullYear() - 1980)) - Math.floor((targetDate.getFullYear() - 1980) / 4);
-    if (targetDate.getDate() === d)
-      return definition[1];
-    return "";
-  };
-  const syuubun = (targetDate, definition) => {
-    if (targetDate.getMonth() + 1 !== 9)
-      return "";
-    if (targetDate.getFullYear() < 1948)
-      return "";
-    if (targetDate.getFullYear() < 1980) {
-      const _24 = [1951, 1955, 1959, 1963, 1967, 1971, 1975, 1979];
-      if (targetDate.getDate() === 24 && _24.includes(targetDate.getFullYear())) {
-        return definition[1];
-      } else if (targetDate.getDate() === 23) {
-        return definition[1];
-      }
-      return "";
-    }
-    const d = Math.floor(23.2488 + 0.242194 * (targetDate.getFullYear() - 1980)) - Math.floor((targetDate.getFullYear() - 1980) / 4);
-    if (targetDate.getDate() === d)
-      return definition[1];
-    return "";
-  };
-  const arrayHoliday = (targetDate, definition) => {
-    const dateString = formatDate(targetDate);
-    return definition[2].includes(dateString) ? definition[1] : "";
-  };
-  const furikae = (targetDate) => {
-    const holiday = "振替休日";
-    if (targetDate.getFullYear() < 1973 || targetDate.getFullYear() === 1973 && targetDate.getMonth() + 1 < 4)
-      return "";
-    let _tmpDate = new Date(targetDate.getTime());
-    let d = 0;
-    while (true) {
-      if (targetDate.getFullYear() < 2007 && d === -1)
-        return "";
-      _tmpDate.setDate(targetDate.getDate() + --d);
-      const _holiday = _isHolidayOnly(_tmpDate);
-      if (!_holiday)
-        return "";
-      if (_tmpDate.getDay() === 0)
-        return holiday;
-    }
-  };
-  const kokumin = (targetDate) => {
-    const holiday = "国民の休日";
-    if (targetDate.getFullYear() < 1986)
-      return "";
-    let beforeDate = new Date(targetDate.getTime());
-    beforeDate.setDate(targetDate.getDate() - 1);
-    let afterDate = new Date(targetDate.getTime());
-    afterDate.setDate(targetDate.getDate() + 1);
-    if (_isHolidayOnly(beforeDate) && _isHolidayOnly(afterDate))
-      return holiday;
-    return "";
-  };
-  const convertStringDate = (date) => {
-    const d = new Date(date);
-    if (!isNaN(d.getDate()))
-      return d;
-    throw new Error("wrong date!");
-  };
-  const formatDate = (date) => {
-    var y = date.getFullYear();
-    var m = ("00" + (date.getMonth() + 1)).slice(-2);
-    var d = ("00" + date.getDate()).slice(-2);
-    return y + "/" + m + "/" + d;
-  };
-  const getNthWeekDay = (year, month, nthWeek2, day) => {
-    const date = new Date(year, month - 1, 1);
-    const s = day < date.getDay() ? 7 : 0;
-    const d = nthWeek2 * 7 + (s - date.getDay()) - 7 + day;
-    date.setDate(date.getDate() + d);
-    return date;
-  };
-  const isHoliday = (date) => {
-    let holiday = "";
-    const targetDate = convertStringDate(date);
-    holiday = _isHolidayOnly(targetDate);
-    if (holiday)
-      return holiday;
-    holiday = furikae(targetDate);
-    if (holiday)
-      return holiday;
-    holiday = kokumin(targetDate);
-    if (holiday)
-      return holiday;
-    if (_workingDefinitions) {
-      holiday = _isWorkingHoliday(targetDate);
-      if (holiday)
-        return holiday;
-    }
-    return holiday;
-  };
-  const setWorkingDefinitions = (workingDefinitions) => {
-    _workingDefinitions = workingDefinitions;
-  };
-  const HolidaysJP = { isHoliday, setWorkingDefinitions };
   //! moment.js
   //! version : 2.29.4
   //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -4162,11 +3929,244 @@ var __publicField = (obj, key, value) => {
     MONTH: "YYYY-MM"
     // <input type="month" />
   };
+  const definitions = [
+    [1, "元日", 1, 1, 1949],
+    [1, "成人の日", 1, 15, 1949, 1999],
+    [2, "成人の日", 1, [2, 1], 2e3],
+    [1, "建国記念の日", 2, 11, 1967],
+    [1, "天皇誕生日", 2, 23, 2020],
+    [1, "昭和天皇の大喪の礼", 2, 24, 1989, 1989],
+    [3, "春分の日"],
+    [1, "皇太子明仁親王の結婚の儀", 4, 10, 1959, 1959],
+    [1, "天皇誕生日", 4, 29, 1949, 1988],
+    [1, "みどりの日", 4, 29, 1989, 2006],
+    [1, "昭和の日", 4, 29, 2007],
+    [1, "即位の日", 5, 1, 2019, 2019],
+    [1, "憲法記念日", 5, 3, 1949],
+    [1, "みどりの日", 5, 4, 2007],
+    [1, "こどもの日", 5, 5, 1949],
+    [1, "皇太子徳仁親王の結婚の儀", 6, 9, 1993, 1993],
+    [1, "海の日", 7, 20, 1996, 2002],
+    [2, "海の日", 7, [3, 1], 2003, 2019],
+    [1, "海の日", 7, 23, 2020, 2020],
+    [1, "海の日", 7, 22, 2021, 2021],
+    [2, "海の日", 7, [3, 1], 2022],
+    [1, "山の日", 8, 11, 2016, 2019],
+    [1, "山の日", 8, 10, 2020, 2020],
+    [1, "山の日", 8, 8, 2021, 2021],
+    [1, "山の日", 8, 11, 2022],
+    [1, "敬老の日", 9, 15, 1966, 2002],
+    [2, "敬老の日", 9, [3, 1], 2003],
+    [4, "秋分の日"],
+    [1, "体育の日", 10, 10, 1966, 1999],
+    [2, "体育の日", 10, [2, 1], 2e3, 2019],
+    [1, "スポーツの日", 7, 24, 2020, 2020],
+    [1, "スポーツの日", 7, 23, 2021, 2021],
+    [2, "スポーツの日", 10, [2, 1], 2022],
+    [1, "即位礼正殿の儀", 10, 22, 2019, 2019],
+    [1, "文化の日", 11, 3, 1948],
+    [1, "即位礼正殿の儀", 11, 12, 1990, 1990],
+    [1, "勤労感謝の日", 11, 23, 1948],
+    [1, "天皇誕生日", 12, 23, 1989, 2018]
+  ];
+  let _workingDefinitions = [];
+  const _isHolidayOnly = (targetDate) => {
+    let holiday = "";
+    for (let def of definitions) {
+      if (def[4] && targetDate.getFullYear() < def[4])
+        continue;
+      if (def[5] && def[5] < targetDate.getFullYear())
+        continue;
+      if (def[0] === 3 && targetDate.getFullYear() <= 1948)
+        continue;
+      if (def[0] === 4 && targetDate.getFullYear() < 1948)
+        continue;
+      if (def[0] === 1) {
+        holiday = simpleHoliday(targetDate, def);
+        if (holiday)
+          break;
+      }
+      if (def[0] === 2) {
+        holiday = nthWeek(targetDate, def);
+        if (holiday)
+          break;
+      }
+      if (def[0] === 3) {
+        holiday = syunbun(targetDate, def);
+        if (holiday)
+          break;
+      }
+      if (def[0] === 4) {
+        holiday = syuubun(targetDate, def);
+        if (holiday)
+          break;
+      }
+    }
+    return holiday;
+  };
+  const _isWorkingHoliday = (targetDate) => {
+    let workingHoliday = "";
+    for (let def of _workingDefinitions) {
+      if (def[4] && targetDate.getFullYear() < def[4])
+        continue;
+      if (def[5] && def[5] < targetDate.getFullYear())
+        continue;
+      if (def[0] === 1) {
+        workingHoliday = simpleHoliday(targetDate, def);
+        if (workingHoliday)
+          break;
+      }
+      if (def[0] === 2) {
+        workingHoliday = nthWeek(targetDate, def);
+        if (workingHoliday)
+          break;
+      }
+      if (def[0] === 9) {
+        workingHoliday = arrayHoliday(targetDate, def);
+        if (workingHoliday)
+          break;
+      }
+    }
+    return workingHoliday;
+  };
+  const simpleHoliday = (targetDate, definition) => {
+    if (targetDate.getMonth() + 1 !== definition[2])
+      return "";
+    if (targetDate.getDate() !== definition[3])
+      return "";
+    return definition[1];
+  };
+  const nthWeek = (targetDate, definition) => {
+    const compDate = getNthWeekDay(
+      targetDate.getFullYear(),
+      definition[2],
+      definition[3][0],
+      definition[3][1]
+    );
+    if (targetDate.getMonth() !== compDate.getMonth())
+      return "";
+    if (targetDate.getDate() !== compDate.getDate())
+      return "";
+    return definition[1];
+  };
+  const syunbun = (targetDate, definition) => {
+    if (targetDate.getMonth() + 1 !== 3)
+      return "";
+    if (targetDate.getFullYear() <= 1948)
+      return "";
+    if (targetDate.getFullYear() < 1980) {
+      const _20 = [1960, 1964, 1968, 1972, 1976];
+      if (targetDate.getDate() === 20 && _20.includes(targetDate.getFullYear())) {
+        return definition[1];
+      } else if (targetDate.getDate() === 21) {
+        return definition[1];
+      }
+      return "";
+    }
+    const d = Math.floor(20.8431 + 0.242194 * (targetDate.getFullYear() - 1980)) - Math.floor((targetDate.getFullYear() - 1980) / 4);
+    if (targetDate.getDate() === d)
+      return definition[1];
+    return "";
+  };
+  const syuubun = (targetDate, definition) => {
+    if (targetDate.getMonth() + 1 !== 9)
+      return "";
+    if (targetDate.getFullYear() < 1948)
+      return "";
+    if (targetDate.getFullYear() < 1980) {
+      const _24 = [1951, 1955, 1959, 1963, 1967, 1971, 1975, 1979];
+      if (targetDate.getDate() === 24 && _24.includes(targetDate.getFullYear())) {
+        return definition[1];
+      } else if (targetDate.getDate() === 23) {
+        return definition[1];
+      }
+      return "";
+    }
+    const d = Math.floor(23.2488 + 0.242194 * (targetDate.getFullYear() - 1980)) - Math.floor((targetDate.getFullYear() - 1980) / 4);
+    if (targetDate.getDate() === d)
+      return definition[1];
+    return "";
+  };
+  const arrayHoliday = (targetDate, definition) => {
+    const dateString = formatDate(targetDate);
+    return definition[2].includes(dateString) ? definition[1] : "";
+  };
+  const furikae = (targetDate) => {
+    const holiday = "振替休日";
+    if (targetDate.getFullYear() < 1973 || targetDate.getFullYear() === 1973 && targetDate.getMonth() + 1 < 4)
+      return "";
+    let _tmpDate = new Date(targetDate.getTime());
+    let d = 0;
+    while (true) {
+      if (targetDate.getFullYear() < 2007 && d === -1)
+        return "";
+      _tmpDate.setDate(targetDate.getDate() + --d);
+      const _holiday = _isHolidayOnly(_tmpDate);
+      if (!_holiday)
+        return "";
+      if (_tmpDate.getDay() === 0)
+        return holiday;
+    }
+  };
+  const kokumin = (targetDate) => {
+    const holiday = "国民の休日";
+    if (targetDate.getFullYear() < 1986)
+      return "";
+    let beforeDate = new Date(targetDate.getTime());
+    beforeDate.setDate(targetDate.getDate() - 1);
+    let afterDate = new Date(targetDate.getTime());
+    afterDate.setDate(targetDate.getDate() + 1);
+    if (_isHolidayOnly(beforeDate) && _isHolidayOnly(afterDate))
+      return holiday;
+    return "";
+  };
+  const convertStringDate = (date) => {
+    const d = new Date(date);
+    if (!isNaN(d.getDate()))
+      return d;
+    throw new Error("wrong date!");
+  };
+  const formatDate = (date) => {
+    var y = date.getFullYear();
+    var m = ("00" + (date.getMonth() + 1)).slice(-2);
+    var d = ("00" + date.getDate()).slice(-2);
+    return y + "/" + m + "/" + d;
+  };
+  const getNthWeekDay = (year, month, nthWeek2, day) => {
+    const date = new Date(year, month - 1, 1);
+    const s = day < date.getDay() ? 7 : 0;
+    const d = nthWeek2 * 7 + (s - date.getDay()) - 7 + day;
+    date.setDate(date.getDate() + d);
+    return date;
+  };
+  const isHoliday = (date) => {
+    let holiday = "";
+    const targetDate = convertStringDate(date);
+    holiday = _isHolidayOnly(targetDate);
+    if (holiday)
+      return holiday;
+    holiday = furikae(targetDate);
+    if (holiday)
+      return holiday;
+    holiday = kokumin(targetDate);
+    if (holiday)
+      return holiday;
+    if (_workingDefinitions) {
+      holiday = _isWorkingHoliday(targetDate);
+      if (holiday)
+        return holiday;
+    }
+    return holiday;
+  };
+  const setWorkingDefinitions = (workingDefinitions) => {
+    _workingDefinitions = workingDefinitions;
+  };
+  const HolidaysJP = { isHoliday, setWorkingDefinitions };
   class DateTimePicker {
     constructor(selector, options) {
       __publicField(this, "options", {
-        pickDate: false,
-        pickTime: true,
+        pickDate: true,
+        pickTime: false,
         startDate: "2000/1/1",
         endDate: "2100/12/31",
         viewMode: 0,
@@ -4186,6 +4186,7 @@ var __publicField = (obj, key, value) => {
         monthsShort: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
       });
       __publicField(this, "currentDate", /* @__PURE__ */ new Date());
+      __publicField(this, "currentTime", /* @__PURE__ */ new Date());
       __publicField(this, "_confirmFormatDate", new RegExp(`^[0-9]{4}/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])$`));
       const elementNode = document.querySelector(selector);
       if (!elementNode)
@@ -4214,6 +4215,7 @@ var __publicField = (obj, key, value) => {
         this.options.endDate = this.parseDateStringToDate(this.options.endDate);
       this.fillDow();
       this.fillMonths();
+      this.fillHours();
       this.showMode();
       this._attachDatePickerEvents();
       this.fillDate();
@@ -4243,7 +4245,7 @@ var __publicField = (obj, key, value) => {
       let hourTemplate = '<span data-action="showHours" data-time-component="hours" class="timepicker-hour"></span>';
       let minuteTemplate = '<span data-action="showMinutes" data-time-component="minutes" class="timepicker-minute"></span>';
       let secondTemplate = '<span data-action="showSeconds" data-time-component="seconds" class="timepicker-second"></span>';
-      let template = '<div class="timepicker-picker"><table class="table-condensed"><tr><td><a class="btn" data-action="incrementHours"></a></td><td class="separator"></td><td><a class="btn" data-action="incrementMinutes"></a></td><td class="separator"></td><td><a class="btn" data-action="incrementSeconds"></a></td></tr><tr><td>' + hourTemplate + '</td> <td class="separator">:</td><td>' + minuteTemplate + '</td> <td class="separator">:</td><td>' + secondTemplate + '</td> </tr><tr><td><a class="btn" data-action="decrementHours">&#9660;</a></td><td class="separator"></td><td><a class="btn" data-action="decrementMinutes">&#9660;</a></td><td class="separator"></td><td><a class="btn" data-action="decrementSeconds">&#9660;</a></td></table></div><div class="timepicker-hours" data-action="selectHour"><table class="table-condensed"></table></div><div class="timepicker-minutes" data-action="selectMinute"><table class="table-condensed"></table></div><div class="timepicker-seconds" data-action="selectSecond"><table class="table-condensed"></table></div>';
+      let template = '<div class="timepicker-picker"><table class="table-condensed"><tr><td><a class="btn" data-action="incrementHours">&#9650;</a></td><td class="separator"></td><td><a class="btn" data-action="incrementMinutes">&#9650;</a></td><td class="separator"></td><td><a class="btn" data-action="incrementSeconds">&#9650;</a></td></tr><tr><td>' + hourTemplate + '</td> <td class="separator">:</td><td>' + minuteTemplate + '</td> <td class="separator">:</td><td>' + secondTemplate + '</td> </tr><tr><td><a class="btn" data-action="decrementHours">&#9660;</a></td><td class="separator"></td><td><a class="btn" data-action="decrementMinutes">&#9660;</a></td><td class="separator"></td><td><a class="btn" data-action="decrementSeconds">&#9660;</a></td></table></div><div class="timepicker-hours" data-action="selectHour"><table class="table-condensed"></table></div><div class="timepicker-minutes" data-action="selectMinute"><table class="table-condensed"></table></div><div class="timepicker-seconds" data-action="selectSecond"><table class="table-condensed"></table></div>';
       return template;
     }
     getDatePickerTemplate() {
@@ -4298,6 +4300,12 @@ var __publicField = (obj, key, value) => {
         return momentDate.toDate();
       }
       throw new Error("オプションに設定された日付のフォーマットが正しくありません。");
+    }
+    padLeft(s, l, c) {
+      if (l < s.length)
+        return s;
+      else
+        return Array(l - s.length + 1).join(c || " ") + s;
     }
     // 日カレンダーのヘッダー、日曜～土曜を埋める処理
     fillDow() {
@@ -4449,6 +4457,21 @@ var __publicField = (obj, key, value) => {
           yearContent.querySelector("td").append(yearElment);
         }
       }
+    }
+    fillHours() {
+      let table = this.options.widget.querySelector(".timepicker .timepicker-hours table");
+      let html = "";
+      let current = 0;
+      for (let i = 0; i < 4; i += 1) {
+        html += "<tr>";
+        for (let j = 0; j < 4; j += 1) {
+          let c = current.toString();
+          html += '<td class="hour">' + this.padLeft(c, 2, "0") + "<td>";
+        }
+        html += "</tr>";
+      }
+      console.log(table);
+      table.innerHTML = html;
     }
     insertHolidays(holidays) {
       const workingHolidays = holidays;

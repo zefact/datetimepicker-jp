@@ -18,6 +18,7 @@ export default class DateTimePicker {
     private options;
     private JpDates;
     private currentDate;
+    private currentTime;
     constructor(selector: string, options?: Partial<Options>);
     init(element: HTMLElement, options?: Partial<Options>): void;
     setTemplate(): HTMLElement;
@@ -27,10 +28,12 @@ export default class DateTimePicker {
     getDaysInMonth(year: number, month: number): number;
     formatDate(date: Date): string;
     parseDateStringToDate(dateString: string): Date;
+    padLeft(s: string, l: number, c: string): string;
     private readonly _confirmFormatDate;
     fillDow(): void;
     fillMonths(): void;
     fillDate(): void;
+    fillHours(): void;
     insertHolidays(holidays: Definition[]): void;
     insertDateIntoInput(): void;
     _attachDatePickerEvents(): void;

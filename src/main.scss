@@ -33,30 +33,18 @@
     font-size: 1.2rem;
   }
 
-  [data-action='incrementHours'],
-  [data-action='incrementMinutes'],
-  [data-action='incrementSeconds'] {
-    position: relative;
-    display: inline-block;
-    padding-left: 20px;
-    color: #333;
-    text-decoration: none;
+  a[data-action='incrementHours'],
+  a[data-action='incrementMinutes'],
+  a[data-action='incrementSeconds'] {
+    color: black;
+    cursor: pointer;
   }
 
-  [data-action='incrementHours']::before,
-  [data-action='incrementMinutes']::before,
-  [data-action='incrementSeconds']::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border: 0;
-    border-top: solid 2px #333;
-    border-right: solid 2px #333;
-    position: absolute;
-    top: 50%;
-    left: 0;
-    margin-top: -4px;
-    transform: rotate(-45deg);
+  a[data-action='decrementHours'],
+  a[data-action='decrementMinutes'],
+  a[data-action='decrementSeconds'] {
+    color: black;
+    cursor: pointer;
   }
 
   table[data-hour-format='12'] .separator {
