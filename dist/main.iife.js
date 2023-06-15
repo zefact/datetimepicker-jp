@@ -4211,12 +4211,12 @@ var __publicField = (obj, key, value) => {
       if (typeof this.options.minDate === "string" && this.options.minDate) {
         this.options.minDate = this.parseStringToDate(this.options.minDate);
       } else if (this.options.minDate instanceof hooks && this.options.minDate) {
-        this.options.minDate = this.perseMomentToDate(this.options.minDate);
+        this.options.minDate = this.options.minDate.toDate();
       }
       if (typeof this.options.maxDate === "string" && this.options.maxDate) {
         this.options.maxDate = this.parseStringToDate(this.options.maxDate);
       } else if (this.options.maxDate instanceof hooks && this.options.maxDate) {
-        this.options.maxDate = this.perseMomentToDate(this.options.maxDate);
+        this.options.maxDate = this.options.maxDate.toDate();
       }
       if (typeof this.options.startTime === "string" && this.options.pickTime) {
         this.parseStringToTime(this.options.startTime);
@@ -4242,7 +4242,8 @@ var __publicField = (obj, key, value) => {
         this.fillTime();
       }
       this.showMode();
-      this._attachPickerEvents();
+      this.checkPreviousDateTimeValue();
+      this.attachPickerEvents();
     }
     // DatePicker切り替え、0:DaysPicker 1:MonthPicker 2：YearPicker
     showMode(dir) {
@@ -4381,9 +4382,6 @@ var __publicField = (obj, key, value) => {
         throw new Error("The time format set is incorrect.");
       }
     }
-    perseMomentToDate(moment2) {
-      return moment2.toDate();
-    }
     // 日付以下切り捨て
     truncateDate(date) {
       let year = date.getFullYear();
@@ -4439,10 +4437,10 @@ var __publicField = (obj, key, value) => {
       let maxYear = this.options.maxDate ? this.options.maxDate.getFullYear() : Infinity;
       let maxMonth = this.options.maxDate ? this.options.maxDate.getMonth() : 11;
       if (this.options.widget) {
-        const disableElents = this.options.widget.querySelectorAll(
+        const disabledElements = this.options.widget.querySelectorAll(
           ".datepicker-days .disabled, .datepicker-months .disabled, .datepicker-years .disabled"
         );
-        disableElents.forEach((element) => {
+        disabledElements.forEach((element) => {
           element.classList.remove("disabled");
         });
         this.options.widget.querySelector(".datepicker-days th:nth-child(2)").textContent = this.JpDates.months[viewMonth] + " " + viewYear;
@@ -4470,7 +4468,8 @@ var __publicField = (obj, key, value) => {
         clsName = "";
         if (prevMonth.getFullYear() < viewYear || prevMonth.getFullYear() == viewYear && prevMonth.getMonth() < viewMonth) {
           clsName += " old";
-        } else if (prevMonth.getFullYear() > viewYear || prevMonth.getFullYear() == viewYear && prevMonth.getMonth() > viewMonth) {
+        }
+        if (prevMonth.getFullYear() > viewYear || prevMonth.getFullYear() == viewYear && prevMonth.getMonth() > viewMonth) {
           clsName += " new";
         }
         if (prevMonth.valueOf() === this.truncateDate(this.currentDate).valueOf()) {
@@ -4666,8 +4665,50 @@ var __publicField = (obj, key, value) => {
         }
       }
     }
+    // インスタンス作成の時Inputに値が入っているか
+    checkPreviousDateTimeValue() {
+      if (this.options.isInput) {
+        let inputTarget = this.options.element;
+        if (inputTarget.value) {
+          let year = this.currentDate.getFullYear();
+          let month = this.currentDate.getMonth();
+          let day = this.currentDate.getDate();
+          let hour = this.currentDate.getHours();
+          let minutes2 = this.currentDate.getMinutes();
+          let seconds2 = this.currentDate.getSeconds();
+          if (this.options.pickDate && this.options.pickTime) {
+            year = Number(inputTarget.value.slice(0, 4));
+            month = Number(inputTarget.value.slice(5, 7));
+            day = Number(inputTarget.value.slice(8, 10));
+            hour = Number(inputTarget.value.slice(10, 13));
+            minutes2 = Number(inputTarget.value.slice(14, 16));
+            seconds2 = Number(inputTarget.value.slice(17, 19));
+          } else if (this.options.pickTime) {
+            hour = Number(inputTarget.value.slice(0, 2));
+            minutes2 = Number(inputTarget.value.slice(3, 5));
+            seconds2 = Number(inputTarget.value.slice(6, 8));
+          } else if (this.options.minViewMode === 1) {
+            year = Number(inputTarget.value.slice(0, 4));
+            month = Number(inputTarget.value.slice(5, 7));
+          } else if (this.options.minViewMode === 2) {
+            year = Number(inputTarget.value.slice(0, 4));
+          } else if (this.options.pickDate) {
+            year = Number(inputTarget.value.slice(0, 4));
+            month = Number(inputTarget.value.slice(5, 7));
+            day = Number(inputTarget.value.slice(8, 10));
+          }
+          let inputValue = new Date(year, month - 1, day, hour, minutes2, seconds2);
+          this.currentDate = new Date(inputValue);
+          this.viewDate = new Date(inputValue);
+          if (this.options.pickDate)
+            this.fillDate();
+          if (this.options.pickTime)
+            this.fillTime();
+        }
+      }
+    }
     // ウィジェット・エレメントでのイベントをバインド
-    _attachPickerEvents() {
+    attachPickerEvents() {
       this.options.widget.addEventListener("click", (e) => {
         this.clickEvent.call(this, e);
       });
@@ -4890,8 +4931,10 @@ var __publicField = (obj, key, value) => {
         }
         this.currentDate = new Date(inputDate);
         this.viewDate = new Date(inputDate);
-        this.fillDate();
-        this.fillTime();
+        if (this.options.pickDate)
+          this.fillDate();
+        if (this.options.pickTime)
+          this.fillTime();
         this.showMode(-10);
         if (this.options.pickTime)
           this.showTimePicker(0);
@@ -4923,7 +4966,7 @@ var __publicField = (obj, key, value) => {
       let DPtemplate = this.getDatePickerTemplate();
       let TPtemplate = this.getTimePickerTemplate();
       if (this.options.pickDate && this.options.pickTime) {
-        templateElement.innerHTML = '<ul><li><div class="datepicker">' + DPtemplate + '</div></li><li class="picker-switch accordion-toggle"><a><i class=""></i></a></li><li><div class="timepicker">' + TPtemplate + "</div></li></ul></div>";
+        templateElement.innerHTML = '<ul><li><div class="datepicker">' + DPtemplate + '</div><div class="timepicker">' + TPtemplate + "</div></li></ul></div>";
         document.body.append(templateElement);
         return templateElement;
       } else if (this.options.pickTime) {

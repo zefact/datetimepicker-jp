@@ -72,12 +72,12 @@ export default class DateTimePicker {
     if (typeof this.options.minDate === 'string' && this.options.minDate) {
       this.options.minDate = this.parseStringToDate(this.options.minDate);
     } else if (this.options.minDate instanceof moment && this.options.minDate) {
-      this.options.minDate = this.perseMomentToDate(this.options.minDate as Moment);
+      this.options.minDate = (this.options.minDate as Moment).toDate();
     }
     if (typeof this.options.maxDate === 'string' && this.options.maxDate) {
       this.options.maxDate = this.parseStringToDate(this.options.maxDate);
     } else if (this.options.maxDate instanceof moment && this.options.maxDate) {
-      this.options.maxDate = this.perseMomentToDate(this.options.maxDate as Moment);
+      this.options.maxDate = (this.options.maxDate as Moment).toDate();
     }
     if (typeof this.options.startTime === 'string' && this.options.pickTime) {
       this.parseStringToTime(this.options.startTime);
@@ -101,7 +101,8 @@ export default class DateTimePicker {
       this.fillTime();
     }
     this.showMode();
-    this._attachPickerEvents();
+    this.checkPreviousDateTimeValue();
+    this.attachPickerEvents();
   }
 
   // DatePicker切り替え、0:DaysPicker 1:MonthPicker 2：YearPicker
@@ -245,10 +246,6 @@ export default class DateTimePicker {
     }
   }
 
-  perseMomentToDate(moment: Moment) {
-    return moment.toDate();
-  }
-
   // 日付以下切り捨て
   truncateDate(date: Date) {
     let year = date.getFullYear();
@@ -305,10 +302,10 @@ export default class DateTimePicker {
 
     // 全体のdisabledを削除して一旦初期化
     if (this.options.widget) {
-      const disableElents = this.options.widget.querySelectorAll(
+      const disabledElements = this.options.widget.querySelectorAll(
         '.datepicker-days .disabled, .datepicker-months .disabled, .datepicker-years .disabled'
       );
-      disableElents.forEach((element) => {
+      disabledElements.forEach((element) => {
         element.classList.remove('disabled');
       });
 
@@ -330,7 +327,7 @@ export default class DateTimePicker {
     let nextMonth: Date = new Date(prevMonth.valueOf());
     nextMonth.setDate(nextMonth.getDate() + 42);
 
-    // 日付を入れる処理、１日づつ加算して判定
+    // 日付を入れてクラスを付ける
     let html: HTMLElement[] = [];
     let row: HTMLElement | null = null;
     let clsName: string;
@@ -345,7 +342,8 @@ export default class DateTimePicker {
         (prevMonth.getFullYear() == viewYear && prevMonth.getMonth() < viewMonth)
       ) {
         clsName += ' old';
-      } else if (
+      }
+      if (
         prevMonth.getFullYear() > viewYear ||
         (prevMonth.getFullYear() == viewYear && prevMonth.getMonth() > viewMonth)
       ) {
@@ -417,6 +415,7 @@ export default class DateTimePicker {
     if (viewYear + 1 > maxYear) {
       monthContent!.querySelector('th:nth-child(3)')!.classList.add('disabled');
     }
+
     // 年を入れる処理
     viewYear = Math.floor(viewYear / 10) * 10;
     let yearContent = this.options.widget?.querySelector('.datepicker-years');
@@ -550,8 +549,50 @@ export default class DateTimePicker {
     }
   }
 
+  // インスタンス作成の時Inputに値が入っているか
+  checkPreviousDateTimeValue() {
+    if (this.options.isInput) {
+      let inputTarget = this.options.element as HTMLInputElement;
+      if (inputTarget.value) {
+        let year = this.currentDate.getFullYear();
+        let month = this.currentDate.getMonth();
+        let day = this.currentDate.getDate();
+        let hour = this.currentDate.getHours();
+        let minutes = this.currentDate.getMinutes();
+        let seconds = this.currentDate.getSeconds();
+        if (this.options.pickDate && this.options.pickTime) {
+          year = Number(inputTarget.value.slice(0, 4));
+          month = Number(inputTarget.value.slice(5, 7));
+          day = Number(inputTarget.value.slice(8, 10));
+          hour = Number(inputTarget.value.slice(10, 13));
+          minutes = Number(inputTarget.value.slice(14, 16));
+          seconds = Number(inputTarget.value.slice(17, 19));
+        } else if (this.options.pickTime) {
+          hour = Number(inputTarget.value.slice(0, 2));
+          minutes = Number(inputTarget.value.slice(3, 5));
+          seconds = Number(inputTarget.value.slice(6, 8));
+        } else if (this.options.minViewMode === 1) {
+          year = Number(inputTarget.value.slice(0, 4));
+          month = Number(inputTarget.value.slice(5, 7));
+        } else if (this.options.minViewMode === 2) {
+          year = Number(inputTarget.value.slice(0, 4));
+        } else if (this.options.pickDate) {
+          year = Number(inputTarget.value.slice(0, 4));
+          month = Number(inputTarget.value.slice(5, 7));
+          day = Number(inputTarget.value.slice(8, 10));
+        }
+
+        let inputValue = new Date(year, month - 1, day, hour, minutes, seconds);
+        this.currentDate = new Date(inputValue);
+        this.viewDate = new Date(inputValue);
+        if (this.options.pickDate) this.fillDate();
+        if (this.options.pickTime) this.fillTime();
+      }
+    }
+  }
+
   // ウィジェット・エレメントでのイベントをバインド
-  _attachPickerEvents() {
+  attachPickerEvents() {
     this.options.widget!.addEventListener('click', (e: Event) => {
       this.clickEvent.call(this, e);
     });
@@ -780,8 +821,8 @@ export default class DateTimePicker {
       }
       this.currentDate = new Date(inputDate);
       this.viewDate = new Date(inputDate);
-      this.fillDate();
-      this.fillTime();
+      if (this.options.pickDate) this.fillDate();
+      if (this.options.pickTime) this.fillTime();
       this.showMode(-10);
       if (this.options.pickTime) this.showTimePicker(0);
     } else {
@@ -826,9 +867,6 @@ export default class DateTimePicker {
         '<div class="datepicker">' +
         DPtemplate +
         '</div>' +
-        '</li>' +
-        '<li class="picker-switch accordion-toggle"><a><i class=""></i></a></li>' +
-        '<li>' +
         '<div class="timepicker">' +
         TPtemplate +
         '</div>' +

@@ -16,7 +16,6 @@ type Options = {
     widget?: HTMLElement;
     workingHolidays?: Definition[];
 };
-import { Moment } from 'moment';
 import { Definition } from '@zefact/holidays-jp/dist/type';
 export default class DateTimePicker {
     private options;
@@ -32,7 +31,6 @@ export default class DateTimePicker {
     createRegExp(): RegExp;
     parseStringToDate(dateString: string): Date;
     parseStringToTime(timeString: string): void;
-    perseMomentToDate(moment: Moment): Date;
     truncateDate(date: Date): Date;
     roundedTime(date: Date): Date;
     fillDow(): void;
@@ -44,7 +42,8 @@ export default class DateTimePicker {
     fillSeconds(): void;
     fillTime(): void;
     insertDateTimeIntoInput(): void;
-    _attachPickerEvents(): void;
+    checkPreviousDateTimeValue(): void;
+    attachPickerEvents(): void;
     clickEvent(e: Event): void;
     stopEvent(e: Event): void;
     focusEvent(): void;
