@@ -4162,20 +4162,19 @@ var __publicField = (obj, key, value) => {
     _workingDefinitions = workingDefinitions;
   };
   const HolidaysJP = { isHoliday, setWorkingDefinitions };
+  window.moment = hooks;
   class DateTimePicker {
     constructor(selector, options) {
       __publicField(this, "options", {
         pickDate: true,
-        pickTime: false,
-        startDate: "2000/1/1",
-        endDate: "2100/12/31",
+        pickTime: true,
+        showSecond: false,
+        minutesStep: 1,
+        secondsStep: 1,
         viewMode: 0,
         startViewMode: 0,
         minViewMode: 0,
-        element: void 0,
-        widget: void 0,
         weekStart: 0,
-        viewDate: /* @__PURE__ */ new Date(),
         isInput: false
       });
       __publicField(this, "JpDates", {
@@ -4185,76 +4184,67 @@ var __publicField = (obj, key, value) => {
         months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
         monthsShort: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
       });
-      __publicField(this, "currentDate", /* @__PURE__ */ new Date());
-      __publicField(this, "currentTime", /* @__PURE__ */ new Date());
-      __publicField(this, "_confirmFormatDate", new RegExp(`^[0-9]{4}/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])$`));
-      const elementNode = document.querySelector(selector);
-      if (!elementNode)
+      __publicField(this, "currentDate", this.roundedTime(/* @__PURE__ */ new Date()));
+      __publicField(this, "viewDate", this.roundedTime(/* @__PURE__ */ new Date()));
+      const element = document.querySelector(selector);
+      if (!element)
         throw new Error(`"${selector}" not found.`);
-      this.init(elementNode, options);
+      this.init(element, options);
     }
     init(element, options) {
       Object.assign(this.options, options);
+      if (![1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60].includes(this.options.minutesStep || this.options.secondsStep)) {
+        throw new Error("Cannot specify that value for minutesStep or secondsStep");
+      }
       if (!(this.options.pickDate || this.options.pickTime))
-        throw new Error("少なくとも1つのピッカーを選択する必要があります。");
+        throw new Error("You must select at least one picker.");
       this.options.element = element;
       this.options.widget = this.setTemplate();
+      this.options.widget.style.display = "none";
       this.options.isInput = element instanceof HTMLInputElement;
-      this.options.viewMode > 2 ? this.options.viewMode = 0 : this.options.viewMode;
       this.options.startViewMode > 2 ? this.options.startViewMode = 0 : this.options.startViewMode;
       this.options.minViewMode > 2 ? this.options.minViewMode = 0 : this.options.minViewMode;
       this.options.weekStart > 6 ? this.options.weekStart = 0 : this.options.weekStart;
       this.options.viewMode = this.options.startViewMode;
       if (this.options.workingHolidays)
         this.insertHolidays(this.options.workingHolidays);
-      if (!(this.options.viewDate instanceof Date))
-        this.options.viewDate = this.parseDateStringToDate(this.options.viewDate);
-      if (!(this.options.startDate instanceof Date))
-        this.options.startDate = this.parseDateStringToDate(this.options.startDate);
-      if (!(this.options.endDate instanceof Date))
-        this.options.endDate = this.parseDateStringToDate(this.options.endDate);
-      this.fillDow();
-      this.fillMonths();
-      this.fillHours();
-      this.showMode();
-      this._attachDatePickerEvents();
-      this.fillDate();
-      this.options.widget.style.display = "none";
-    }
-    // bodyにテンプレートを差し込む
-    setTemplate() {
-      const templateElement = document.createElement("div");
-      templateElement.className = "bootstrap-datetimepicker-widget dropdown-menu";
-      let DPtemplate = this.getDatePickerTemplate();
-      let TPtemplate = this.getTimePickerTemplate();
-      if (this.options.pickDate && this.options.pickTime) {
-        templateElement.innerHTML = '<ul><li><div class="datepicker">' + DPtemplate + '</div></li><li class="picker-switch accordion-toggle"><a><i class=""></i></a></li><li><div class="timepicker">' + TPtemplate + "</div></li></ul></div>";
-        document.body.append(templateElement);
-        return templateElement;
-      } else if (this.options.pickTime) {
-        templateElement.innerHTML = '<div class="timepicker">' + TPtemplate + "</div>";
-        document.body.append(templateElement);
-        return templateElement;
-      } else {
-        templateElement.innerHTML = '<div class="datepicker">' + DPtemplate + "</div>";
-        document.body.append(templateElement);
-        return templateElement;
+      if (typeof this.options.minDate === "string" && this.options.minDate) {
+        this.options.minDate = this.parseStringToDate(this.options.minDate);
+      } else if (this.options.minDate instanceof hooks && this.options.minDate) {
+        this.options.minDate = this.perseMomentToDate(this.options.minDate);
       }
+      if (typeof this.options.maxDate === "string" && this.options.maxDate) {
+        this.options.maxDate = this.parseStringToDate(this.options.maxDate);
+      } else if (this.options.maxDate instanceof hooks && this.options.maxDate) {
+        this.options.maxDate = this.perseMomentToDate(this.options.maxDate);
+      }
+      if (typeof this.options.startTime === "string" && this.options.pickTime) {
+        this.parseStringToTime(this.options.startTime);
+      }
+      if (this.options.pickDate && this.options.pickTime) {
+        this.fillDow();
+        this.fillMonths();
+        this.fillHours();
+        this.fillMinutes();
+        if (this.options.showSecond)
+          this.fillSeconds();
+        this.fillDate();
+        this.fillTime();
+      } else if (this.options.pickDate) {
+        this.fillDow();
+        this.fillMonths();
+        this.fillDate();
+      } else {
+        this.fillHours();
+        this.fillMinutes();
+        if (this.options.showSecond)
+          this.fillSeconds();
+        this.fillTime();
+      }
+      this.showMode();
+      this._attachPickerEvents();
     }
-    getTimePickerTemplate() {
-      let hourTemplate = '<span data-action="showHours" data-time-component="hours" class="timepicker-hour"></span>';
-      let minuteTemplate = '<span data-action="showMinutes" data-time-component="minutes" class="timepicker-minute"></span>';
-      let secondTemplate = '<span data-action="showSeconds" data-time-component="seconds" class="timepicker-second"></span>';
-      let template = '<div class="timepicker-picker"><table class="table-condensed"><tr><td><a class="btn" data-action="incrementHours">&#9650;</a></td><td class="separator"></td><td><a class="btn" data-action="incrementMinutes">&#9650;</a></td><td class="separator"></td><td><a class="btn" data-action="incrementSeconds">&#9650;</a></td></tr><tr><td>' + hourTemplate + '</td> <td class="separator">:</td><td>' + minuteTemplate + '</td> <td class="separator">:</td><td>' + secondTemplate + '</td> </tr><tr><td><a class="btn" data-action="decrementHours">&#9660;</a></td><td class="separator"></td><td><a class="btn" data-action="decrementMinutes">&#9660;</a></td><td class="separator"></td><td><a class="btn" data-action="decrementSeconds">&#9660;</a></td></table></div><div class="timepicker-hours" data-action="selectHour"><table class="table-condensed"></table></div><div class="timepicker-minutes" data-action="selectMinute"><table class="table-condensed"></table></div><div class="timepicker-seconds" data-action="selectSecond"><table class="table-condensed"></table></div>';
-      return template;
-    }
-    getDatePickerTemplate() {
-      let headTemplate = '<thead><tr><th class="prev">&lsaquo;</th><th colspan="5" class="switch"></th><th class="next">&rsaquo;</th></tr></thead>';
-      let contentTemplate = '<tbody><tr><td colspan="7"></td></tr></tbody>';
-      let template = '<div class="datepicker-days"><table class="table-condensed">' + headTemplate + '<tbody></tbody></table></div><div class="datepicker-months"><table class="table-condensed">' + headTemplate + contentTemplate + '</table></div><div class="datepicker-years"><table class="table-condensed">' + headTemplate + contentTemplate + "</table></div>";
-      return template;
-    }
-    // カレンダーを切り替える処理、0:日カレンダー, 1:月カレンダー, 2：年カレンダー
+    // DatePicker切り替え、0:DaysPicker 1:MonthPicker 2：YearPicker
     showMode(dir) {
       if (dir) {
         this.options.viewMode = Math.max(this.options.minViewMode, Math.min(2, this.options.viewMode + dir));
@@ -4284,7 +4274,33 @@ var __publicField = (obj, key, value) => {
         }
       }
     }
-    // 加工関数
+    // TimePicker切り替え、0:TimePicker 1:HourPicker 2:MinutesPicker 3:SecondsPicker
+    showTimePicker(mode) {
+      let timePicker = this.options.widget.querySelector(".timepicker-picker");
+      let hourPicker = this.options.widget.querySelector(".timepicker-hours");
+      let minutesPicker = this.options.widget.querySelector(".timepicker-minutes");
+      let secondsPicker = this.options.widget.querySelector(".timepicker-seconds");
+      switch (mode) {
+        case 0:
+          timePicker.style.display = "block";
+          hourPicker.style.display = "none";
+          minutesPicker.style.display = "none";
+          if (this.options.showSecond)
+            secondsPicker.style.display = "none";
+          break;
+        case 1:
+          timePicker.style.display = "none";
+          hourPicker.style.display = "block";
+          break;
+        case 2:
+          timePicker.style.display = "none";
+          minutesPicker.style.display = "block";
+          break;
+        case 3:
+          timePicker.style.display = "none";
+          secondsPicker.style.display = "block";
+      }
+    }
     getDaysInMonth(year, month) {
       return new Date(year, month, 0).getDate();
     }
@@ -4292,20 +4308,98 @@ var __publicField = (obj, key, value) => {
       const yyyy = date.getFullYear();
       const mm = ("00" + (date.getMonth() + 1)).slice(-2);
       const dd = ("00" + date.getDate()).slice(-2);
-      return `${yyyy}/${mm}/${dd}`;
+      const HH = ("00" + date.getHours()).slice(-2);
+      const MM = ("00" + date.getMinutes()).slice(-2);
+      const SS = ("00" + date.getSeconds()).slice(-2);
+      if (this.options.pickDate && this.options.pickTime && this.options.showSecond) {
+        return `${yyyy}/${mm}/${dd} ${HH}:${MM}:${SS}`;
+      } else if (this.options.pickDate && this.options.pickTime) {
+        return `${yyyy}/${mm}/${dd} ${HH}:${MM}`;
+      } else if (this.options.pickDate) {
+        return `${yyyy}/${mm}/${dd}`;
+      } else if (this.options.pickTime && this.options.showSecond) {
+        return `${HH}:${MM}:${SS}`;
+      } else {
+        return `${HH}:${MM}`;
+      }
     }
-    parseDateStringToDate(dateString) {
-      const momentDate = hooks(dateString, ["YYYY-MM-DD", "YYYY/MM/DD", "YYYYMMDD"]);
+    createRegExp() {
+      let minutes2 = "(";
+      let seconds2 = "(";
+      for (let i = 0; i <= 59; i += this.options.minutesStep) {
+        minutes2 += i.toString().padStart(2, "0");
+        if (i + this.options.minutesStep <= 59) {
+          minutes2 += "|";
+        }
+      }
+      for (let i = 0; i <= 59; i += this.options.secondsStep) {
+        seconds2 += i.toString().padStart(2, "0");
+        if (i + this.options.secondsStep <= 59) {
+          seconds2 += "|";
+        }
+      }
+      minutes2 += ")";
+      seconds2 += ")";
+      if (this.options.pickDate && this.options.pickTime && this.options.showSecond) {
+        return new RegExp(
+          `^[0-9]{4}/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):${minutes2}:${seconds2}$`
+        );
+      } else if (this.options.pickDate && this.options.pickTime) {
+        return new RegExp(`^[0-9]{4}/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):${minutes2}$`);
+      } else if (this.options.pickDate && this.options.minViewMode === 1) {
+        return new RegExp("^[0-9]{4}/(0[1-9]|1[0-2])$");
+      } else if (this.options.pickDate && this.options.minViewMode === 2) {
+        return new RegExp("^[0-9]{4}$");
+      } else if (this.options.pickTime && this.options.showSecond) {
+        return new RegExp(`^([01][0-9]|2[0-3]):${minutes2}:${seconds2}$`);
+      } else if (this.options.pickDate) {
+        return new RegExp("^[0-9]{4}/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])$");
+      } else {
+        return new RegExp(`^([01][0-9]|2[0-3]):${minutes2}$`);
+      }
+    }
+    parseStringToDate(dateString) {
+      const momentDate = hooks(dateString, ["yyyy/MM/dd", "yyyy-MM-dd", "yyyyMMdd"]);
       if (momentDate.isValid()) {
         return momentDate.toDate();
+      } else {
+        throw new Error("The date format set is incorrect.");
       }
-      throw new Error("オプションに設定された日付のフォーマットが正しくありません。");
     }
-    padLeft(s, l, c) {
-      if (l < s.length)
-        return s;
-      else
-        return Array(l - s.length + 1).join(c || " ") + s;
+    parseStringToTime(timeString) {
+      let momentTime;
+      if (this.options.showSecond) {
+        momentTime = hooks(timeString, "HH:mm:ss");
+      } else {
+        momentTime = hooks(timeString, "HH:mm");
+      }
+      if (momentTime.isValid()) {
+        this.currentDate.setHours(momentTime.toDate().getHours());
+        this.currentDate.setMinutes(momentTime.toDate().getMinutes());
+        this.currentDate.setSeconds(momentTime.toDate().getSeconds());
+      } else {
+        throw new Error("The time format set is incorrect.");
+      }
+    }
+    perseMomentToDate(moment2) {
+      return moment2.toDate();
+    }
+    // 日付以下切り捨て
+    truncateDate(date) {
+      let year = date.getFullYear();
+      let month = date.getMonth();
+      let day = date.getDate();
+      return new Date(year, month, day);
+    }
+    // 秒・分数１桁台切り捨て
+    roundedTime(date) {
+      let year = date.getFullYear();
+      let month = date.getMonth();
+      let day = date.getDate();
+      let hour = date.getHours();
+      let minutes2 = 0;
+      let seconds2 = 0;
+      return new Date(year, month, day, hour, minutes2, seconds2);
     }
     // 日カレンダーのヘッダー、日曜～土曜を埋める処理
     fillDow() {
@@ -4316,6 +4410,10 @@ var __publicField = (obj, key, value) => {
         let weekHeader = document.createElement("th");
         weekHeader.classList.add("dow");
         weekHeader.textContent = this.JpDates.daysMin[dowCnt % 7];
+        if (weekHeader.textContent === "土")
+          weekHeader.classList.add("saturday");
+        if (weekHeader.textContent === "日")
+          weekHeader.classList.add("sunday");
         weekRow.appendChild(weekHeader);
         dowCnt++;
       }
@@ -4334,151 +4432,224 @@ var __publicField = (obj, key, value) => {
     // 月、年、モード切り替えの度に実行される、カレンダーを初期化して構築し直す
     fillDate() {
       var _a, _b, _c, _d, _e;
-      if (this.options.pickDate) {
-        let viewYear = this.options.viewDate.getFullYear();
-        let viewMonth = this.options.viewDate.getMonth();
-        let startYear = this.options.startDate.getFullYear();
-        let startMonth = this.options.startDate.getMonth();
-        let endYear = this.options.endDate.getFullYear();
-        let endMonth = this.options.endDate.getMonth();
-        if (this.options.widget) {
-          const disableElents = this.options.widget.querySelectorAll(
-            ".datepicker-days .disabled, .datepicker-months .disabled, .datepicker-years .disabled"
-          );
-          disableElents.forEach((element) => {
-            element.classList.remove("disabled");
-          });
-          this.options.widget.querySelector(".datepicker-days th:nth-child(2)").textContent = this.JpDates.months[viewMonth] + " " + viewYear;
-        }
-        let prevMonth = new Date(viewYear, viewMonth - 1, 28);
-        let daysInMonth2 = this.getDaysInMonth(prevMonth.getFullYear(), prevMonth.getMonth() + 1);
-        prevMonth.setDate(daysInMonth2);
-        prevMonth.setDate(daysInMonth2 - (prevMonth.getDay() - this.options.weekStart + 7) % 7);
-        if (viewYear == startYear && viewMonth <= startMonth || viewYear < startYear) {
-          this.options.widget.querySelector(".datepicker-days th:nth-child(1)").classList.add("disabled");
-        }
-        if (viewYear == endYear && viewMonth >= endMonth || viewYear > endYear) {
-          (_b = (_a = this.options.widget) == null ? void 0 : _a.querySelector(".datepicker-days th:nth-child(3)")) == null ? void 0 : _b.classList.add("disabled");
-        }
-        let nextMonth = new Date(prevMonth.valueOf());
-        nextMonth.setDate(nextMonth.getDate() + 42);
-        let html = [];
-        let row = null;
-        let clsName;
-        while (prevMonth.valueOf() < nextMonth.valueOf()) {
-          if (prevMonth.getDay() === this.options.weekStart) {
-            row = document.createElement("tr");
-            html.push(row);
-          }
-          clsName = "";
-          if (prevMonth.getFullYear() < viewYear || prevMonth.getFullYear() == viewYear && prevMonth.getMonth() < viewMonth) {
-            clsName += " old";
-          } else if (prevMonth.getFullYear() > viewYear || prevMonth.getFullYear() == viewYear && prevMonth.getMonth() > viewMonth) {
-            clsName += " new";
-          }
-          if (prevMonth.valueOf() === this.currentDate.setHours(0, 0, 0, 0).valueOf()) {
-            clsName += " active";
-          }
-          if (prevMonth.valueOf() + 864e5 <= this.options.startDate.valueOf()) {
-            clsName += " disabled";
-          }
-          if (prevMonth.valueOf() > this.options.endDate.valueOf()) {
-            clsName += " disabled";
-          }
-          if (HolidaysJP.isHoliday(prevMonth)) {
-            clsName += " holiday";
-          }
-          if (prevMonth.toDateString() === (/* @__PURE__ */ new Date()).toDateString()) {
-            clsName += " today";
-          }
-          let td = document.createElement("td");
-          td.className = "day" + clsName;
-          td.textContent = prevMonth.getDate().toString();
-          row == null ? void 0 : row.append(td);
-          prevMonth.setDate(prevMonth.getDate() + 1);
-        }
-        if (this.options.widget) {
-          this.options.widget.querySelectorAll(".datepicker-days tbody").forEach((e) => {
-            e.innerHTML = "";
-            html.forEach((element) => {
-              e.insertAdjacentElement("beforeend", element);
-            });
-          });
-        }
-        let monthContent = (_c = this.options.widget) == null ? void 0 : _c.querySelector(".datepicker-months");
-        monthContent.querySelector("th:nth-child(2)").innerHTML = viewYear.toString();
-        monthContent.querySelectorAll("span").forEach((e) => {
-          e.classList.remove("active");
+      let viewYear = this.viewDate.getFullYear();
+      let viewMonth = this.viewDate.getMonth();
+      let minYear = this.options.minDate ? this.options.minDate.getFullYear() : 0;
+      let minMonth = this.options.minDate ? this.options.minDate.getMonth() : 0;
+      let maxYear = this.options.maxDate ? this.options.maxDate.getFullYear() : Infinity;
+      let maxMonth = this.options.maxDate ? this.options.maxDate.getMonth() : 11;
+      if (this.options.widget) {
+        const disableElents = this.options.widget.querySelectorAll(
+          ".datepicker-days .disabled, .datepicker-months .disabled, .datepicker-years .disabled"
+        );
+        disableElents.forEach((element) => {
+          element.classList.remove("disabled");
         });
-        if (viewYear === startYear) {
-          monthContent.querySelectorAll(`span:nth-child(-n+${startMonth})`).forEach((e) => {
-            e.classList.add("disabled");
-          });
+        this.options.widget.querySelector(".datepicker-days th:nth-child(2)").textContent = this.JpDates.months[viewMonth] + " " + viewYear;
+      }
+      let prevMonth = new Date(viewYear, viewMonth - 1, 28);
+      let daysInMonth2 = this.getDaysInMonth(prevMonth.getFullYear(), prevMonth.getMonth() + 1);
+      prevMonth.setDate(daysInMonth2);
+      prevMonth.setDate(daysInMonth2 - (prevMonth.getDay() - this.options.weekStart + 7) % 7);
+      if (viewYear == minYear && viewMonth <= minMonth || viewYear < minYear) {
+        this.options.widget.querySelector(".datepicker-days th:nth-child(1)").classList.add("disabled");
+      }
+      if (viewYear == maxYear && viewMonth >= maxMonth || viewYear > maxYear) {
+        (_b = (_a = this.options.widget) == null ? void 0 : _a.querySelector(".datepicker-days th:nth-child(3)")) == null ? void 0 : _b.classList.add("disabled");
+      }
+      let nextMonth = new Date(prevMonth.valueOf());
+      nextMonth.setDate(nextMonth.getDate() + 42);
+      let html = [];
+      let row = null;
+      let clsName;
+      while (prevMonth.valueOf() < nextMonth.valueOf()) {
+        if (prevMonth.getDay() === this.options.weekStart) {
+          row = document.createElement("tr");
+          html.push(row);
         }
-        if (viewYear === endYear) {
-          monthContent.querySelectorAll(`span:nth-child(n+${endMonth + 2})`).forEach((e) => {
-            e.classList.add("disabled");
+        clsName = "";
+        if (prevMonth.getFullYear() < viewYear || prevMonth.getFullYear() == viewYear && prevMonth.getMonth() < viewMonth) {
+          clsName += " old";
+        } else if (prevMonth.getFullYear() > viewYear || prevMonth.getFullYear() == viewYear && prevMonth.getMonth() > viewMonth) {
+          clsName += " new";
+        }
+        if (prevMonth.valueOf() === this.truncateDate(this.currentDate).valueOf()) {
+          clsName += " active";
+        }
+        if (this.options.minDate) {
+          if (prevMonth.valueOf() + 864e5 <= this.options.minDate.valueOf()) {
+            clsName += " disabled";
+          }
+        }
+        if (this.options.maxDate) {
+          if (prevMonth.valueOf() > this.options.maxDate.valueOf()) {
+            clsName += " disabled";
+          }
+        }
+        if (prevMonth.getDay() === 0) {
+          clsName += " sunday";
+        }
+        if (prevMonth.getDay() === 6) {
+          clsName += " saturday";
+        }
+        if (HolidaysJP.isHoliday(prevMonth)) {
+          clsName += " holiday";
+        }
+        if (prevMonth.toDateString() === (/* @__PURE__ */ new Date()).toDateString()) {
+          clsName += " today";
+        }
+        let td = document.createElement("td");
+        td.className = "day" + clsName;
+        td.textContent = prevMonth.getDate().toString();
+        row == null ? void 0 : row.append(td);
+        prevMonth.setDate(prevMonth.getDate() + 1);
+      }
+      if (this.options.widget) {
+        this.options.widget.querySelectorAll(".datepicker-days tbody").forEach((e) => {
+          e.innerHTML = "";
+          html.forEach((element) => {
+            e.insertAdjacentElement("beforeend", element);
           });
+        });
+      }
+      let monthContent = (_c = this.options.widget) == null ? void 0 : _c.querySelector(".datepicker-months");
+      monthContent.querySelector("th:nth-child(2)").innerHTML = viewYear.toString();
+      monthContent.querySelectorAll("span").forEach((e) => {
+        e.classList.remove("active");
+      });
+      if (viewYear === minYear) {
+        monthContent.querySelectorAll(`span:nth-child(-n+${minMonth})`).forEach((e) => {
+          e.classList.add("disabled");
+        });
+      }
+      if (viewYear === maxYear) {
+        monthContent.querySelectorAll(`span:nth-child(n+${maxMonth + 2})`).forEach((e) => {
+          e.classList.add("disabled");
+        });
+      }
+      if (this.currentDate.getFullYear() === viewYear) {
+        monthContent.querySelector(`span:nth-child(${viewMonth + 1})`).classList.add("active");
+      }
+      if (viewYear - 1 < minYear) {
+        monthContent.querySelector("th:nth-child(1)").classList.add("disabled");
+      }
+      if (viewYear + 1 > maxYear) {
+        monthContent.querySelector("th:nth-child(3)").classList.add("disabled");
+      }
+      viewYear = Math.floor(viewYear / 10) * 10;
+      let yearContent = (_d = this.options.widget) == null ? void 0 : _d.querySelector(".datepicker-years");
+      yearContent.querySelector("td").innerHTML = "";
+      yearContent.querySelector("th:nth-child(2)").innerHTML = viewYear + "-" + (viewYear + 9);
+      yearContent.querySelector("th").classList.remove("disabled");
+      if (minYear > viewYear) {
+        yearContent.querySelector("th:nth-child(1)").classList.add("disabled");
+      }
+      if (maxYear < viewYear + 9) {
+        (_e = yearContent.querySelector("th:nth-child(3)")) == null ? void 0 : _e.classList.add("disabled");
+      }
+      viewYear -= 1;
+      for (let i = -1; i < 11; i++) {
+        let yearElment = document.createElement("span");
+        yearElment.classList.add("year");
+        if (i === -1 || i === 10) {
+          yearElment.classList.add("old");
         }
         if (this.currentDate.getFullYear() === viewYear) {
-          monthContent.querySelector(`span:nth-child(${viewMonth + 1})`).classList.add("active");
+          yearElment.classList.add("active");
         }
-        if (viewYear - 1 < startYear) {
-          monthContent.querySelector("th:nth-child(1)").classList.add("disabled");
+        if (viewYear < minYear || viewYear > maxYear) {
+          yearElment.classList.add("disabled");
         }
-        if (viewYear + 1 > endYear) {
-          monthContent.querySelector("th:nth-child(3)").classList.add("disabled");
-        }
-        viewYear = Math.floor(viewYear / 10) * 10;
-        let yearContent = (_d = this.options.widget) == null ? void 0 : _d.querySelector(".datepicker-years");
-        yearContent.querySelector("td").innerHTML = "";
-        yearContent.querySelector("th:nth-child(2)").innerHTML = viewYear + "-" + (viewYear + 9);
-        yearContent.querySelector("th").classList.remove("disabled");
-        if (startYear > viewYear) {
-          yearContent.querySelector("th:nth-child(1)").classList.add("disabled");
-        }
-        if (endYear < viewYear + 9) {
-          (_e = yearContent.querySelector("th:nth-child(3)")) == null ? void 0 : _e.classList.add("disabled");
-        }
-        viewYear -= 1;
-        for (let i = -1; i < 11; i++) {
-          let yearElment = document.createElement("span");
-          if (i === -1 || i === 10) {
-            yearElment.classList.add("old");
-          }
-          if (this.currentDate.getFullYear() === viewYear) {
-            yearElment.classList.add("active");
-          }
-          if (viewYear < startYear || viewYear > endYear) {
-            yearElment.classList.add("disabled");
-          }
-          yearElment.textContent = viewYear.toString();
-          viewYear += 1;
-          yearContent.querySelector("td").append(yearElment);
-        }
+        yearElment.textContent = viewYear.toString();
+        viewYear += 1;
+        yearContent.querySelector("td").append(yearElment);
       }
     }
-    fillHours() {
-      let table = this.options.widget.querySelector(".timepicker .timepicker-hours table");
-      let html = "";
-      let current = 0;
-      for (let i = 0; i < 4; i += 1) {
-        html += "<tr>";
-        for (let j = 0; j < 4; j += 1) {
-          let c = current.toString();
-          html += '<td class="hour">' + this.padLeft(c, 2, "0") + "<td>";
-        }
-        html += "</tr>";
-      }
-      console.log(table);
-      table.innerHTML = html;
-    }
+    // 休日を追加する関数
     insertHolidays(holidays) {
       const workingHolidays = holidays;
       HolidaysJP.setWorkingDefinitions(workingHolidays);
     }
-    // 日付がクリックされたらクリックされた日付を挿入、月・年表示の時は表示を変える
-    insertDateIntoInput() {
+    // 時間選択を埋める
+    fillHours() {
+      var _a;
+      let table = (_a = this.options.widget) == null ? void 0 : _a.querySelector(".timepicker .timepicker-hours table");
+      table.parentElement.style.display = "none";
+      let html = "";
+      let current = 0;
+      for (let i = 0; i < 6; i += 1) {
+        html += "<tr>";
+        for (let j = 0; j < 4; j += 1) {
+          html += '<td class="hour">' + current.toString().padStart(2, "0") + "</td>";
+          current++;
+        }
+        html += "</tr>";
+      }
+      table.innerHTML = html;
+    }
+    // 分選択を埋める
+    fillMinutes() {
+      var _a;
+      let table = (_a = this.options.widget) == null ? void 0 : _a.querySelector(".timepicker .timepicker-minutes table");
+      table.parentElement.style.display = "none";
+      let html = "";
+      let current = 0;
+      let column = 60 % (this.options.minutesStep * 4) === 0 ? 4 : 60 % (this.options.minutesStep * 5) === 0 ? 5 : 6;
+      for (let i = 0; i < 60 / (this.options.minutesStep * column); i++) {
+        html += "<tr>";
+        for (let j = 0; j < column; j += 1) {
+          if (current > 59)
+            break;
+          html += '<td class="minute">' + current.toString().padStart(2, "0") + "</td>";
+          current += this.options.minutesStep;
+        }
+        html += "</tr>";
+      }
+      table.innerHTML = html;
+    }
+    // 秒選択を埋める
+    fillSeconds() {
+      var _a;
+      let table = (_a = this.options.widget) == null ? void 0 : _a.querySelector(".timepicker .timepicker-seconds table");
+      table.parentElement.style.display = "none";
+      table.innerHTML = "";
+      let html = "";
+      let current = 0;
+      let column = 60 % (this.options.secondsStep * 4) === 0 ? 4 : 60 % (this.options.secondsStep * 5) === 0 ? 5 : 6;
+      for (let i = 0; i < 60 / (this.options.secondsStep * column); i++) {
+        html += "<tr>";
+        for (let j = 0; j < column; j += 1) {
+          if (current > 59)
+            break;
+          html += '<td class="second">' + current.toString().padStart(2, "0") + "</td>";
+          current += this.options.secondsStep;
+        }
+        html += "</tr>";
+      }
+      table.innerHTML = html;
+    }
+    // timepickerに表示される時間を更新
+    fillTime() {
+      let timeComponents = this.options.widget.querySelectorAll(".timepicker span[data-time-component]");
+      let hour = this.currentDate.getHours().toString().padStart(2, "0");
+      let minutes2 = this.currentDate.getMinutes().toString().padStart(2, "0");
+      let seconds2 = this.currentDate.getSeconds().toString().padStart(2, "0");
+      timeComponents.forEach((e) => {
+        switch (e.getAttribute("data-time-component")) {
+          case "hours":
+            e.textContent = hour;
+            break;
+          case "minutes":
+            e.textContent = minutes2;
+            break;
+          case "seconds":
+            e.textContent = seconds2;
+            break;
+        }
+      });
+    }
+    // 日付がクリックされたらクリックされた日付をinputに挿入、月・年表示の時は表示を変える
+    insertDateTimeIntoInput() {
       let insertValue = this.formatDate(this.currentDate);
       if (this.options.isInput) {
         let targetInput = this.options.element;
@@ -4495,17 +4666,13 @@ var __publicField = (obj, key, value) => {
         }
       }
     }
-    // ウィジェット・エレメントでのイベントを別イベントにバインド
-    _attachDatePickerEvents() {
+    // ウィジェット・エレメントでのイベントをバインド
+    _attachPickerEvents() {
       this.options.widget.addEventListener("click", (e) => {
-        const target = e.target;
-        if (target.closest(".datepicker"))
-          this.clickEvent.call(this, e);
+        this.clickEvent.call(this, e);
       });
       this.options.widget.addEventListener("mousedown", (e) => {
-        const target = e.target;
-        if (target.closest(".datepicker"))
-          this.stopEvent.call(this, e);
+        this.stopEvent.call(this, e);
       });
       if (this.options.isInput) {
         this.options.element.addEventListener("focus", this.focusEvent.bind(this));
@@ -4529,25 +4696,25 @@ var __publicField = (obj, key, value) => {
                     break;
                   case "prev":
                     if (target.closest(".datepicker-days")) {
-                      this.options.viewDate.setMonth(this.options.viewDate.getMonth() - 1);
+                      this.viewDate.setMonth(this.viewDate.getMonth() - 1);
                     }
                     if (target.closest(".datepicker-months")) {
-                      this.options.viewDate.setFullYear(this.options.viewDate.getFullYear() - 1);
+                      this.viewDate.setFullYear(this.viewDate.getFullYear() - 1);
                     }
                     if (target.closest(".datepicker-years")) {
-                      this.options.viewDate.setFullYear(this.options.viewDate.getFullYear() - 10);
+                      this.viewDate.setFullYear(this.viewDate.getFullYear() - 10);
                     }
                     this.fillDate();
                     break;
                   case "next":
                     if (target.closest(".datepicker-days")) {
-                      this.options.viewDate.setMonth(this.options.viewDate.getMonth() + 1);
+                      this.viewDate.setMonth(this.viewDate.getMonth() + 1);
                     }
                     if (target.closest(".datepicker-months")) {
-                      this.options.viewDate.setFullYear(this.options.viewDate.getFullYear() + 1);
+                      this.viewDate.setFullYear(this.viewDate.getFullYear() + 1);
                     }
                     if (target.closest(".datepicker-years")) {
-                      this.options.viewDate.setFullYear(this.options.viewDate.getFullYear() + 10);
+                      this.viewDate.setFullYear(this.viewDate.getFullYear() + 10);
                     }
                     this.fillDate();
                     break;
@@ -4556,27 +4723,34 @@ var __publicField = (obj, key, value) => {
               case "span":
                 if (target.classList.contains("month")) {
                   let month = Number(target.innerHTML.match(/\d+/g));
-                  this.options.viewDate.setMonth(month - 1);
-                } else {
+                  this.viewDate.setMonth(month - 1);
+                  this.currentDate.setMonth(month - 1);
+                  this.currentDate.setFullYear(this.viewDate.getFullYear());
+                }
+                if (target.classList.contains("year")) {
                   let year = Number(target.innerHTML);
-                  this.options.viewDate.setFullYear(year);
+                  this.viewDate.setFullYear(year);
+                  this.currentDate.setFullYear(year);
                 }
-                if (this.options.viewMode !== 0) {
-                  this.currentDate = new Date(
-                    this.options.viewDate.getFullYear(),
-                    this.options.viewDate.getMonth(),
-                    this.options.viewDate.getDate()
-                  );
+                if (target.classList.contains("timepicker-hour")) {
+                  this.showTimePicker(1);
                 }
-                this.insertDateIntoInput();
+                if (target.classList.contains("timepicker-minute")) {
+                  this.showTimePicker(2);
+                }
+                if (target.classList.contains("timepicker-second")) {
+                  this.showTimePicker(3);
+                }
+                if (this.options.pickDate)
+                  this.fillDate();
+                this.insertDateTimeIntoInput();
                 this.showMode(-1);
-                this.fillDate();
                 break;
               case "td":
                 if (target.classList.contains("day")) {
                   let day = Number(target.innerHTML);
-                  let month = this.options.viewDate.getMonth();
-                  let year = this.options.viewDate.getFullYear();
+                  let month = this.viewDate.getMonth();
+                  let year = this.viewDate.getFullYear();
                   if (target.classList.contains("old")) {
                     if (month === 0) {
                       month = 11;
@@ -4592,11 +4766,62 @@ var __publicField = (obj, key, value) => {
                       month += 1;
                     }
                   }
-                  this.options.viewDate = new Date(year, month, Math.min(28, day));
-                  this.currentDate = new Date(year, month, day);
-                  this.fillDate();
-                  this.insertDateIntoInput();
+                  this.viewDate = new Date(year, month, Math.min(28, day));
+                  this.currentDate = new Date(
+                    year,
+                    month,
+                    day,
+                    this.currentDate.getHours(),
+                    this.currentDate.getMinutes(),
+                    this.currentDate.getSeconds()
+                  );
                 }
+                if (target.classList.contains("hour")) {
+                  this.currentDate.setHours(Number(target.innerHTML));
+                  this.showTimePicker(0);
+                } else if (target.classList.contains("minute")) {
+                  this.currentDate.setMinutes(Number(target.innerHTML));
+                  this.showTimePicker(0);
+                } else if (target.classList.contains("second")) {
+                  this.currentDate.setSeconds(Number(target.innerHTML));
+                  this.showTimePicker(0);
+                }
+                if (target.children.length !== 0) {
+                  let hour = this.currentDate.getHours();
+                  let minutes2 = this.currentDate.getMinutes();
+                  let seconds2 = this.currentDate.getSeconds();
+                  if (target.children[0].classList.contains("incrementHours")) {
+                    hour += 1;
+                  } else if (target.children[0].classList.contains("incrementMinutes")) {
+                    minutes2 += this.options.minutesStep;
+                  } else if (target.children[0].classList.contains("incrementSeconds")) {
+                    if (seconds2 + this.options.secondsStep >= 60 && this.options.minutesStep !== 1) {
+                      minutes2 += this.options.minutesStep - 1;
+                      seconds2 += this.options.minutesStep;
+                    } else {
+                      seconds2 += this.options.minutesStep;
+                    }
+                  } else if (target.children[0].classList.contains("decrementHours")) {
+                    hour -= 1;
+                  } else if (target.children[0].classList.contains("decrementMinutes")) {
+                    minutes2 -= this.options.minutesStep;
+                  } else if (target.children[0].classList.contains("decrementSeconds")) {
+                    if (seconds2 - this.options.secondsStep < 0 && this.options.minutesStep !== 1) {
+                      minutes2 -= this.options.minutesStep - 1;
+                      seconds2 -= this.options.minutesStep;
+                    } else {
+                      seconds2 -= this.options.minutesStep;
+                    }
+                  }
+                  this.currentDate.setHours(hour);
+                  this.currentDate.setMinutes(minutes2);
+                  this.currentDate.setSeconds(seconds2);
+                }
+                if (this.options.pickDate)
+                  this.fillDate();
+                if (this.options.pickTime)
+                  this.fillTime();
+                this.insertDateTimeIntoInput();
                 break;
             }
           }
@@ -4610,29 +4835,71 @@ var __publicField = (obj, key, value) => {
     }
     focusEvent() {
       this.options.widget.style.display = "block";
-      this.place();
+      this.adjustPlace();
+      this.insertDateTimeIntoInput();
     }
     focusoutEvent() {
+      this.options.widget.style.display = "none";
+      this.showMode(-10);
+      if (this.options.pickTime)
+        this.showTimePicker(0);
     }
     changeEvent() {
       let target = this.options.element;
       let targetVal = target.value;
-      if (this._confirmFormatDate.test(targetVal)) {
-        let year = Number(targetVal.slice(0, 4));
-        let month = Number(targetVal.slice(5, 7));
-        let day = Number(targetVal.slice(8, 10));
-        let inputDate = new Date(year, month - 1, day);
-        if (inputDate.valueOf() < this.options.startDate.valueOf() || inputDate.valueOf() > this.options.endDate.valueOf()) {
-          this.insertDateIntoInput();
-          return;
+      if (this.createRegExp().test(targetVal)) {
+        let year = this.currentDate.getFullYear();
+        let month = this.currentDate.getMonth();
+        let day = this.currentDate.getDate();
+        let hour = this.currentDate.getHours();
+        let minutes2 = this.currentDate.getMinutes();
+        let seconds2 = this.currentDate.getSeconds();
+        if (this.options.pickDate && this.options.pickTime) {
+          year = Number(targetVal.slice(0, 4));
+          month = Number(targetVal.slice(5, 7));
+          day = Number(targetVal.slice(8, 10));
+          hour = Number(targetVal.slice(10, 13));
+          minutes2 = Number(targetVal.slice(14, 16));
+          seconds2 = Number(targetVal.slice(17, 19));
+        } else if (this.options.pickTime) {
+          hour = Number(targetVal.slice(0, 2));
+          minutes2 = Number(targetVal.slice(3, 5));
+          seconds2 = Number(targetVal.slice(6, 8));
+        } else if (this.options.minViewMode === 1) {
+          year = Number(targetVal.slice(0, 4));
+          month = Number(targetVal.slice(5, 7));
+        } else if (this.options.minViewMode === 2) {
+          year = Number(targetVal.slice(0, 4));
+        } else if (this.options.pickDate) {
+          year = Number(targetVal.slice(0, 4));
+          month = Number(targetVal.slice(5, 7));
+          day = Number(targetVal.slice(8, 10));
         }
-        this.currentDate = this.options.viewDate = inputDate;
+        let inputDate = new Date(year, month - 1, day, hour, minutes2, seconds2);
+        if (this.options.minDate) {
+          if (inputDate.valueOf() < this.options.minDate.valueOf()) {
+            this.insertDateTimeIntoInput();
+            return;
+          }
+        }
+        if (this.options.maxDate) {
+          if (inputDate.valueOf() > this.options.maxDate.valueOf()) {
+            this.insertDateTimeIntoInput();
+            return;
+          }
+        }
+        this.currentDate = new Date(inputDate);
+        this.viewDate = new Date(inputDate);
         this.fillDate();
+        this.fillTime();
+        this.showMode(-10);
+        if (this.options.pickTime)
+          this.showTimePicker(0);
       } else {
-        this.insertDateIntoInput();
+        this.insertDateTimeIntoInput();
       }
     }
-    place() {
+    adjustPlace() {
       let position = "absolute";
       let elementInfo = this.options.element.getBoundingClientRect();
       let widgetInfo = this.options.widget.getBoundingClientRect();
@@ -4648,6 +4915,48 @@ var __publicField = (obj, key, value) => {
         let rightOffset = elementInfo.left + widgetInfo.width - window.innerWidth;
         this.options.widget.style.left = (elementInfo.left - rightOffset).toString() + "px";
       }
+    }
+    // bodyにテンプレートを差し込む
+    setTemplate() {
+      const templateElement = document.createElement("div");
+      templateElement.className = "bootstrap-datetimepicker-widget dropdown-menu";
+      let DPtemplate = this.getDatePickerTemplate();
+      let TPtemplate = this.getTimePickerTemplate();
+      if (this.options.pickDate && this.options.pickTime) {
+        templateElement.innerHTML = '<ul><li><div class="datepicker">' + DPtemplate + '</div></li><li class="picker-switch accordion-toggle"><a><i class=""></i></a></li><li><div class="timepicker">' + TPtemplate + "</div></li></ul></div>";
+        document.body.append(templateElement);
+        return templateElement;
+      } else if (this.options.pickTime) {
+        templateElement.innerHTML = '<div class="timepicker only">' + TPtemplate + "</div>";
+        document.body.append(templateElement);
+        return templateElement;
+      } else {
+        templateElement.innerHTML = '<div class="datepicker">' + DPtemplate + "</div>";
+        document.body.append(templateElement);
+        return templateElement;
+      }
+    }
+    getTimePickerTemplate() {
+      let hourTemplate = '<span data-action="showHours" data-time-component="hours" class="timepicker-hour"></span>';
+      let minutesTemplate = '<span data-action="showMinutes" data-time-component="minutes" class="timepicker-minute"></span>';
+      let secondsTemplate = '<span data-action="showSeconds" data-time-component="seconds" class="timepicker-second"></span>';
+      let template = "";
+      if (this.options.showSecond) {
+        template = '<div class="timepicker-picker"><table class="table-condensed"><tr><td><a class="time-control incrementHours">&#9650;</a></td><td class="separator"></td><td><a class="time-control incrementMinutes">&#9650;</a></td><td class="separator"></td><td><a class="time-control incrementSeconds">&#9650;</a></td></tr><tr><td>' + hourTemplate + '</td> <td class="separator">:</td><td>' + minutesTemplate + '</td> <td class="separator">:</td><td>' + secondsTemplate + '</td> </tr><tr><td><a class="time-control decrementHours">&#9660;</a></td><td class="separator"></td><td><a class="time-control decrementMinutes">&#9660;</a></td><td class="separator"></td><td><a class="time-control decrementSeconds">&#9660;</a></td></table></div><div class="timepicker-hours" data-action="selectHour"><table class="table-condensed"></table></div><div class="timepicker-minutes" data-action="selectMinute"><table class="table-condensed"></table></div><div class="timepicker-seconds" data-action="selectSecond"><table class="table-condensed"></table></div>';
+      } else {
+        template = '<div class="timepicker-picker"><table class="table-condensed"><tr><td><a class="time-control incrementHours">&#9650;</td><td class="separator"></td><td><a class="time-control incrementMinutes">&#9650;</a></td></tr><tr><td>' + hourTemplate + '</td> <td class="separator">:</td><td>' + minutesTemplate + '</td> </tr><tr><td><a class="time-control decrementHours">&#9660;</a></td><td class="separator"></td><td><a class="time-control decrementMinutes">&#9660;</a></td></table></div><div class="timepicker-hours" data-action="selectHour"><table class="table-condensed"></table></div><div class="timepicker-minutes" data-action="selectMinute"><table class="table-condensed"></table></div>';
+      }
+      return template;
+    }
+    getDatePickerTemplate() {
+      let headTemplate = '<thead><tr><th class="prev">&lsaquo;</th><th colspan="5" class="switch"></th><th class="next">&rsaquo;</th></tr></thead>';
+      let contentTemplate = '<tbody><tr><td colspan="7"></td></tr></tbody>';
+      let template = '<div class="datepicker-days"><table class="table-condensed">' + headTemplate + '<tbody></tbody></table></div><div class="datepicker-months"><table class="table-condensed">' + headTemplate + contentTemplate + '</table></div><div class="datepicker-years"><table class="table-condensed">' + headTemplate + contentTemplate + "</table></div>";
+      return template;
+    }
+    // インスタンス作成後にオプションを変更する場合に使用
+    setOptions(options) {
+      this.init(this.options.element, options);
     }
   }
   return DateTimePicker;

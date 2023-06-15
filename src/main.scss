@@ -1,12 +1,18 @@
 .bootstrap-datetimepicker-widget {
   top: 0;
   left: 0;
-  width: 18rem;
   padding: 1rem;
   z-index: 3000;
   border-radius: 0.375rem;
   background-color: white;
   box-shadow: 0 0.625rem 1.5625rem 0 rgba(0, 0, 0, 0.3);
+  .datepicker,
+  .timepicker {
+    width: 18rem;
+    &.only {
+      width: 12rem;
+    }
+  }
 
   &.pull-right {
     &:before {
@@ -33,17 +39,13 @@
     font-size: 1.2rem;
   }
 
-  a[data-action='incrementHours'],
-  a[data-action='incrementMinutes'],
-  a[data-action='incrementSeconds'] {
-    color: black;
+  a.time-control {
+    color: #2196f3;
     cursor: pointer;
   }
 
-  a[data-action='decrementHours'],
-  a[data-action='decrementMinutes'],
-  a[data-action='decrementSeconds'] {
-    color: black;
+  a.time-control:active {
+    color: white;
     cursor: pointer;
   }
 
@@ -106,11 +108,11 @@
       color: red;
     }
 
-    &.day:nth-child(1) {
+    &.day.sunday {
       color: red;
     }
 
-    &.day:nth-child(7):not(.holiday) {
+    &.day.saturday {
       color: blue;
     }
 
@@ -118,6 +120,8 @@
       color: red;
     }
 
+    &.hour.disabled,
+    &.hour.disabled:hover,
     &.day.disabled,
     &.day.disabled:hover {
       background: none;
@@ -125,9 +129,19 @@
       cursor: not-allowed;
     }
 
-    &.day:nth-child(7).active:not(.holiday),
-    &.day:nth-child(7).active:not(.holiday):hover {
+    &.day.saturday.active:not(.holiday),
+    &.day.saturday.active:not(.holiday):hover {
       color: #fff;
+    }
+
+    &.hour,
+    &.minute,
+    &.second {
+      font-size: 1.1rem;
+    }
+
+    &.separator {
+      font-size: 1.5rem;
     }
 
     span {
@@ -159,6 +173,21 @@
         color: rgb(243, 244, 246);
         cursor: not-allowed;
       }
+
+      &.timepicker-hour,
+      &.timepicker-minute,
+      &.timepicker-second {
+        margin: 0;
+        font-weight: 400;
+      }
+    }
+  }
+
+  .timepicker {
+    &.only {
+      td {
+        height: 1.25rem;
+      }
     }
   }
 
@@ -179,11 +208,11 @@
       cursor: not-allowed;
     }
 
-    &.dow:nth-child(1) {
+    &.dow.sunday {
       color: red;
     }
 
-    &.dow:nth-child(7) {
+    &.dow.saturday {
       color: blue;
     }
   }
@@ -197,34 +226,6 @@
   }
 }
 
-.input-append,
-.input-prepend {
-  &.date {
-    .add-on i {
-      display: block;
-      cursor: pointer;
-      width: 1rem;
-      height: 1rem;
-    }
-  }
-}
-
-.bootstrap-datetimepicker-widget.left-oriented {
-  &:before {
-    left: auto;
-    right: 0.375rem;
-  }
-
-  &:after {
-    left: auto;
-    right: 0.4375rem;
-  }
-}
-
 ul {
   padding-inline-start: 0px;
-}
-
-html:root {
-  font-size: 16px;
 }

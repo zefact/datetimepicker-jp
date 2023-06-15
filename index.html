@@ -11,21 +11,9 @@
 
   <body>
     <input type="text" id="test1" style="margin-top: 300px" />
-    <input type="text" id="test2" />
     <script type="text/javascript">
       const a = new Datetimepicker('#test1', {
-        workingHolidays: [
-          [1, 'test', 12, 30, 2022, 2026],
-          [9, 'hoge', ['2023/12/16']],
-        ],
-        pickDate: true,
-        pickTime: true,
-      });
-      const b = new Datetimepicker('#test2', {
-        workingHolidays: [
-          [1, 'test', 12, 30, 2022, [2026]],
-          [9, 'hoge', ['2023/12/16']],
-        ],
+        minutesStep: 15,
       });
     </script>
   </body>

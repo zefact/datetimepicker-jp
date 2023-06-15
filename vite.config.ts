@@ -1,5 +1,4 @@
 import autoprefixer from 'autoprefixer';
-import alias from '@rollup/plugin-alias';
 import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => {
