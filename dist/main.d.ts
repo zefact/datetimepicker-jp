@@ -1,22 +1,21 @@
 type Options = {
     pickDate: boolean;
     pickTime: boolean;
-    showSecond: boolean;
-    isInput: boolean;
+    showSeconds: boolean;
     minutesStep: number;
     secondsStep: number;
     viewMode: number;
     startViewMode: number;
     minViewMode: number;
     weekStart: number;
+    isInput: boolean;
     minDate?: any;
     maxDate?: any;
     startTime?: any;
     element?: HTMLElement;
     widget?: HTMLElement;
-    workingHolidays?: Definition[];
+    workingHolidays?: [string];
 };
-import { Definition } from '@zefact/holidays-jp/dist/type';
 export default class DateTimePicker {
     private options;
     private JpDates;
@@ -36,7 +35,7 @@ export default class DateTimePicker {
     fillDow(): void;
     fillMonths(): void;
     fillDate(): void;
-    insertHolidays(holidays: Definition[]): void;
+    addCustomHoliday(holiday: [string]): void;
     fillHours(): void;
     fillMinutes(): void;
     fillSeconds(): void;

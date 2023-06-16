@@ -1,33 +1,32 @@
 type Options = {
   pickDate: boolean;
   pickTime: boolean;
-  showSecond: boolean;
-  isInput: boolean;
+  showSeconds: boolean;
   minutesStep: number;
   secondsStep: number;
   viewMode: number;
   startViewMode: number;
   minViewMode: number;
   weekStart: number;
+  isInput: boolean;
   minDate?: any;
   maxDate?: any;
   startTime?: any;
   element?: HTMLElement;
   widget?: HTMLElement;
-  workingHolidays?: Definition[];
+  workingHolidays?: [string];
 };
 
 import moment, { Moment } from 'moment';
 window.moment = moment;
 import HolidaysJP from '@zefact/holidays-jp';
 import { Definition } from '@zefact/holidays-jp/dist/type';
-import { Definitions } from '@zefact/holidays-jp/dist/type';
 
 export default class DateTimePicker {
   private options: Options = {
     pickDate: true,
     pickTime: true,
-    showSecond: false,
+    showSeconds: false,
     minutesStep: 1,
     secondsStep: 1,
     viewMode: 0,
@@ -68,7 +67,7 @@ export default class DateTimePicker {
     this.options.minViewMode > 2 ? (this.options.minViewMode = 0) : this.options.minViewMode;
     this.options.weekStart > 6 ? (this.options.weekStart = 0) : this.options.weekStart;
     this.options.viewMode = this.options.startViewMode;
-    if (this.options.workingHolidays) this.insertHolidays(this.options.workingHolidays);
+    if (this.options.workingHolidays) this.addCustomHoliday(this.options.workingHolidays);
     if (typeof this.options.minDate === 'string' && this.options.minDate) {
       this.options.minDate = this.parseStringToDate(this.options.minDate);
     } else if (this.options.minDate instanceof moment && this.options.minDate) {
@@ -87,7 +86,7 @@ export default class DateTimePicker {
       this.fillMonths();
       this.fillHours();
       this.fillMinutes();
-      if (this.options.showSecond) this.fillSeconds();
+      if (this.options.showSeconds) this.fillSeconds();
       this.fillDate();
       this.fillTime();
     } else if (this.options.pickDate) {
@@ -97,7 +96,7 @@ export default class DateTimePicker {
     } else {
       this.fillHours();
       this.fillMinutes();
-      if (this.options.showSecond) this.fillSeconds();
+      if (this.options.showSeconds) this.fillSeconds();
       this.fillTime();
     }
     this.showMode();
@@ -145,7 +144,7 @@ export default class DateTimePicker {
         timePicker.style.display = 'block';
         hourPicker.style.display = 'none';
         minutesPicker.style.display = 'none';
-        if (this.options.showSecond) secondsPicker.style.display = 'none';
+        if (this.options.showSeconds) secondsPicker.style.display = 'none';
         break;
       case 1:
         timePicker.style.display = 'none';
@@ -172,13 +171,13 @@ export default class DateTimePicker {
     const HH = ('00' + date.getHours()).slice(-2);
     const MM = ('00' + date.getMinutes()).slice(-2);
     const SS = ('00' + date.getSeconds()).slice(-2);
-    if (this.options.pickDate && this.options.pickTime && this.options.showSecond) {
+    if (this.options.pickDate && this.options.pickTime && this.options.showSeconds) {
       return `${yyyy}/${mm}/${dd} ${HH}:${MM}:${SS}`;
     } else if (this.options.pickDate && this.options.pickTime) {
       return `${yyyy}/${mm}/${dd} ${HH}:${MM}`;
     } else if (this.options.pickDate) {
       return `${yyyy}/${mm}/${dd}`;
-    } else if (this.options.pickTime && this.options.showSecond) {
+    } else if (this.options.pickTime && this.options.showSeconds) {
       return `${HH}:${MM}:${SS}`;
     } else {
       return `${HH}:${MM}`;
@@ -202,7 +201,7 @@ export default class DateTimePicker {
     }
     minutes += ')';
     seconds += ')';
-    if (this.options.pickDate && this.options.pickTime && this.options.showSecond) {
+    if (this.options.pickDate && this.options.pickTime && this.options.showSeconds) {
       return new RegExp(
         `^[0-9]{4}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\ ([01][0-9]|2[0-3]):${minutes}:${seconds}$`
       );
@@ -212,7 +211,7 @@ export default class DateTimePicker {
       return new RegExp('^[0-9]{4}/(0[1-9]|1[0-2])$');
     } else if (this.options.pickDate && this.options.minViewMode === 2) {
       return new RegExp('^[0-9]{4}$');
-    } else if (this.options.pickTime && this.options.showSecond) {
+    } else if (this.options.pickTime && this.options.showSeconds) {
       return new RegExp(`^([01][0-9]|2[0-3]):${minutes}:${seconds}$`);
     } else if (this.options.pickDate) {
       return new RegExp('^[0-9]{4}/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])$');
@@ -232,7 +231,7 @@ export default class DateTimePicker {
 
   parseStringToTime(timeString: string) {
     let momentTime: Moment;
-    if (this.options.showSecond) {
+    if (this.options.showSeconds) {
       momentTime = moment(timeString, 'HH:mm:ss');
     } else {
       momentTime = moment(timeString, 'HH:mm');
@@ -448,9 +447,18 @@ export default class DateTimePicker {
   }
 
   // 休日を追加する関数
-  insertHolidays(holidays: Definition[]) {
-    const workingHolidays: Definitions = holidays;
-    HolidaysJP.setWorkingDefinitions(workingHolidays);
+  addCustomHoliday(holiday: [string]) {
+    if (holiday instanceof Array) {
+      let costomHolidays: Definition[] = [];
+      holiday.forEach((e) => {
+        if (typeof e[0] === 'string') {
+          costomHolidays.push([9, 'holiday', [e]]);
+        }
+      });
+      HolidaysJP.setWorkingDefinitions(costomHolidays);
+    } else {
+      throw new Error('The value passed to the workingHolidays should be an array');
+    }
   }
 
   // 時間選択を埋める
@@ -724,9 +732,9 @@ export default class DateTimePicker {
                 } else if (target.children[0].classList.contains('incrementSeconds')) {
                   if (seconds + this.options.secondsStep >= 60 && this.options.minutesStep !== 1) {
                     minutes += this.options.minutesStep - 1;
-                    seconds += this.options.minutesStep;
+                    seconds += this.options.secondsStep;
                   } else {
-                    seconds += this.options.minutesStep;
+                    seconds += this.options.secondsStep;
                   }
                 } else if (target.children[0].classList.contains('decrementHours')) {
                   hour -= 1;
@@ -735,14 +743,53 @@ export default class DateTimePicker {
                 } else if (target.children[0].classList.contains('decrementSeconds')) {
                   if (seconds - this.options.secondsStep < 0 && this.options.minutesStep !== 1) {
                     minutes -= this.options.minutesStep - 1;
-                    seconds -= this.options.minutesStep;
+                    seconds -= this.options.secondsStep;
                   } else {
-                    seconds -= this.options.minutesStep;
+                    seconds -= this.options.secondsStep;
                   }
                 }
-                this.currentDate.setHours(hour);
-                this.currentDate.setMinutes(minutes);
-                this.currentDate.setSeconds(seconds);
+                if (this.options.minDate || this.options.maxDate) {
+                  let resultDate = new Date(
+                    this.currentDate.getFullYear(),
+                    this.currentDate.getMonth(),
+                    this.currentDate.getDate(),
+                    hour,
+                    minutes,
+                    seconds
+                  );
+                  if (this.options.minDate && this.options.maxDate) {
+                    if (
+                      this.options.minDate.valueOf() > resultDate.valueOf() ||
+                      this.options.maxDate.valueOf() < resultDate.valueOf()
+                    ) {
+                      return;
+                    } else {
+                      this.currentDate.setHours(hour);
+                      this.currentDate.setMinutes(minutes);
+                      this.currentDate.setSeconds(seconds);
+                    }
+                  } else if (this.options.minDate) {
+                    if (this.options.minDate.valueOf() > resultDate.valueOf()) {
+                      return;
+                    } else {
+                      this.currentDate.setHours(hour);
+                      this.currentDate.setMinutes(minutes);
+                      this.currentDate.setSeconds(seconds);
+                    }
+                  } else if (this.options.maxDate) {
+                    if (this.options.maxDate.valueOf() < resultDate.valueOf()) {
+                      return;
+                    } else {
+                      this.currentDate.setHours(hour);
+                      this.currentDate.setMinutes(minutes);
+                      this.currentDate.setSeconds(seconds);
+                    }
+                  }
+                } else {
+                  this.currentDate.setHours(hour);
+                  this.currentDate.setMinutes(minutes);
+                  this.currentDate.setSeconds(seconds);
+                }
               }
               if (this.options.pickDate) this.fillDate();
               if (this.options.pickTime) this.fillTime();
@@ -893,10 +940,10 @@ export default class DateTimePicker {
       '<span data-action="showMinutes" data-time-component="minutes" class="timepicker-minute"></span>';
 
     let secondsTemplate =
-      '<span data-action="showSeconds" data-time-component="seconds" class="timepicker-second"></span>';
+      '<span data-action="showSecondss" data-time-component="seconds" class="timepicker-second"></span>';
 
     let template = '';
-    if (this.options.showSecond) {
+    if (this.options.showSeconds) {
       template =
         '<div class="timepicker-picker">' +
         '<table class="table-condensed">' +

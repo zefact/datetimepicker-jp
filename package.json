@@ -1,13 +1,13 @@
 {
   "name": "@zefact/datetimepicker-jp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "カレンダー",
   "main": "dist/main.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite",
-    "build": "vite build && vite build --mode development && vite build --mode css && vite build --mode minifycss && tsc -d",
+    "build": "vite build && vite build --mode css && tsc -d",
     "preview": "vite preview"
   },
   "repository": {
@@ -21,7 +21,7 @@
   "keywords": [
     "javascript",
     "日本",
-    "祝日"
+    "カレンダー"
   ],
   "author": "ZEFACT Co., Ltd.",
   "license": "MIT",
