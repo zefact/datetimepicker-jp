@@ -42,7 +42,7 @@ const myPicker = new Datetimepicker('#my-picker'{
 | maxDate | moment<br>string<br>Date | なし | カレンダーを選択できる最大の日付。設定方法は上記と同じです。|
 | startTime | string | なし | Timepickerの初期表示時間。<br>設定がなければ、現在時:0分:0秒となります。<br>String型のフォーマットは['HH:mm:ss','HH:mm'] |
 | workingHolidays | [string] | なし | カレンダーに任意の祝日を追加できます。<br>全体を配列として渡してください、フォーマットは['yyyy/MM/dd'] |
-| setOptions | なし | インスタンス作成後にオプションを追加できます。 |
+| setOptions | なし | なし | インスタンス作成後にオプションを追加できます。 |
 
 ## Lisense
 
