@@ -10,12 +10,43 @@
   </head>
 
   <body>
-    <input type="text" id="test1" style="margin-top: 300px" />
+    <input type="text" class="datetimepicker month" style="margin-top: 300px" />
+    <input type="text" class="datetimepicker time" style="margin-top: 300px" />
+    <input type="text" class="datetimepicker date" style="margin-top: 300px" />
     <script type="text/javascript">
-      const a = new Datetimepicker('#test1', {
+      const picker = document.querySelectorAll('.datetimepicker');
+
+      const monthOption = {
         pickTime: false,
-        pickDate: true,
-        // workingHolidays: ['2023/06/15', '2023/06/19'],
+        startViewMode: 1,
+        minViewMode: 1,
+      };
+
+      const timeOption = {
+        pickDate: false,
+        showSecond: false,
+        minutesStep: 5,
+      };
+
+      const dateOption = {
+        pickTime: false,
+        minDate: moment().startOf('month'),
+        maxDate: moment().endOf('month'),
+      };
+
+      picker.forEach((e) => {
+        const myPicker = new Datetimepicker(e, {});
+        if (e.classList.contains('month')) {
+          myPicker.setOptions(monthOption);
+        }
+
+        if (e.classList.contains('time')) {
+          myPicker.setOptions(timeOption);
+        }
+
+        if (e.classList.contains('date')) {
+          myPicker.setOptions(dateOption);
+        }
       });
     </script>
   </body>

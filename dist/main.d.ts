@@ -21,7 +21,7 @@ export default class DateTimePicker {
     private JpDates;
     private currentDate;
     private viewDate;
-    constructor(selector: string, options?: Partial<Options>);
+    constructor(element: HTMLElement, options?: Partial<Options>);
     init(element: HTMLElement, options?: Partial<Options>): void;
     showMode(dir?: number): void;
     showTimePicker(mode: number): void;

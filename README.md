@@ -18,7 +18,8 @@ import Datetimepicker from '@zefact/datetimepicker-jp';
 ブラウザ
 
 ```ts
-const myPicker = new Datetimepicker('#my-picker'{
+const dateTimePicker = document.querySelector('.dateTimePicker');
+const myPicker = new Datetimepicker(dateTimePicker {
     // ここにオプションを指定する
     pickDate: true
 })

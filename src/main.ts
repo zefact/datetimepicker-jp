@@ -47,9 +47,8 @@ export default class DateTimePicker {
   private currentDate: Date = this.roundedTime(new Date());
   private viewDate: Date = this.roundedTime(new Date());
 
-  constructor(selector: string, options?: Partial<Options>) {
-    const element = document.querySelector<HTMLElement>(selector);
-    if (!element) throw new Error(`"${selector}" not found.`);
+  constructor(element: HTMLElement, options?: Partial<Options>) {
+    if (!element) throw new Error(`"${element}" not found.`);
     this.init(element, options);
   }
 
@@ -102,6 +101,7 @@ export default class DateTimePicker {
     this.showMode();
     this.checkPreviousDateTimeValue();
     this.attachPickerEvents();
+    this.adjustPlace();
   }
 
   // DatePicker切り替え、0:DaysPicker 1:MonthPicker 2：YearPicker
@@ -877,7 +877,7 @@ export default class DateTimePicker {
     }
   }
 
-  adjustPlace(): void {
+  adjustPlace() {
     // 初期値
     let position: string = 'absolute';
     let elementInfo = this.options.element!.getBoundingClientRect();
