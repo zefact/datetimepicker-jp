@@ -1,6 +1,6 @@
 {
   "name": "@zefact/datetimepicker-jp",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "カレンダー",
   "main": "dist/main.js",
   "type": "module",
