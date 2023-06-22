@@ -9,9 +9,9 @@ type Options = {
   minViewMode: number;
   weekStart: number;
   isInput: boolean;
+  formatMode: number;
   minDate?: any;
   maxDate?: any;
-  startTime?: any;
   element?: HTMLElement;
   widget?: HTMLElement;
   workingHolidays?: [string];
@@ -34,18 +34,16 @@ export default class DateTimePicker {
     minViewMode: 0,
     weekStart: 0,
     isInput: false,
+    formatMode: 0,
   };
 
   private JpDates = {
-    days: ['日曜', '月曜', '火曜', '水曜', '木曜', '金曜', '土曜', '日曜'],
-    daysShort: ['日', '月', '火', '水', '木', '金', '土', '日'],
     daysMin: ['日', '月', '火', '水', '木', '金', '土', '日'],
     months: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-    monthsShort: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
   };
 
-  private currentDate: Date = this.roundedTime(new Date());
-  private viewDate: Date = this.roundedTime(new Date());
+  private currentDate: Date = this.truncateMinuteToDate(new Date());
+  private viewDate: Date = this.truncateMinuteToDate(new Date());
 
   constructor(element: HTMLElement, options?: Partial<Options>) {
     if (!element) throw new Error(`"${element}" not found.`);
@@ -55,7 +53,7 @@ export default class DateTimePicker {
   init(element: HTMLElement, options?: Partial<Options>) {
     Object.assign(this.options, options);
     if (![1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60].includes(this.options.minutesStep || this.options.secondsStep)) {
-      throw new Error('Cannot specify that value for minutesStep or secondsStep');
+      throw new Error('Cannot set that value for minutesStep or secondsStep');
     }
     if (!(this.options.pickDate || this.options.pickTime)) throw new Error('You must select at least one picker.');
     this.options.element = element;
@@ -77,9 +75,6 @@ export default class DateTimePicker {
     } else if (this.options.maxDate instanceof moment && this.options.maxDate) {
       this.options.maxDate = (this.options.maxDate as Moment).toDate();
     }
-    if (typeof this.options.startTime === 'string' && this.options.pickTime) {
-      this.parseStringToTime(this.options.startTime);
-    }
     if (this.options.pickDate && this.options.pickTime) {
       this.fillDow();
       this.fillMonths();
@@ -99,7 +94,6 @@ export default class DateTimePicker {
       this.fillTime();
     }
     this.showMode();
-    this.checkPreviousDateTimeValue();
     this.attachPickerEvents();
     this.adjustPlace();
   }
@@ -172,15 +166,35 @@ export default class DateTimePicker {
     const MM = ('00' + date.getMinutes()).slice(-2);
     const SS = ('00' + date.getSeconds()).slice(-2);
     if (this.options.pickDate && this.options.pickTime && this.options.showSeconds) {
-      return `${yyyy}/${mm}/${dd} ${HH}:${MM}:${SS}`;
+      if (this.options.formatMode === 1) {
+        return `${yyyy}年${mm}月${dd}日 ${HH}時${MM}分${SS}秒`;
+      } else {
+        return `${yyyy}/${mm}/${dd} ${HH}:${MM}:${SS}`;
+      }
     } else if (this.options.pickDate && this.options.pickTime) {
-      return `${yyyy}/${mm}/${dd} ${HH}:${MM}`;
+      if (this.options.formatMode === 1) {
+        return `${yyyy}年${mm}月${dd}日 ${HH}時${MM}分`;
+      } else {
+        return `${yyyy}/${mm}/${dd} ${HH}:${MM}`;
+      }
     } else if (this.options.pickDate) {
-      return `${yyyy}/${mm}/${dd}`;
+      if (this.options.formatMode === 1) {
+        return `${yyyy}年${mm}月${dd}日`;
+      } else {
+        return `${yyyy}/${mm}/${dd}`;
+      }
     } else if (this.options.pickTime && this.options.showSeconds) {
-      return `${HH}:${MM}:${SS}`;
+      if (this.options.formatMode === 1) {
+        return `${HH}時${MM}分${SS}秒`;
+      } else {
+        return `${HH}:${MM}:${SS}`;
+      }
     } else {
-      return `${HH}:${MM}`;
+      if (this.options.formatMode === 1) {
+        return `${HH}時${MM}分`;
+      } else {
+        return `${HH}:${MM}`;
+      }
     }
   }
 
@@ -202,21 +216,51 @@ export default class DateTimePicker {
     minutes += ')';
     seconds += ')';
     if (this.options.pickDate && this.options.pickTime && this.options.showSeconds) {
-      return new RegExp(
-        `^[0-9]{4}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\ ([01][0-9]|2[0-3]):${minutes}:${seconds}$`
-      );
+      if (this.options.formatMode === 1) {
+        return new RegExp(
+          `^[0-9]{4}\年(0[1-9]|1[0-2])月(0[1-9]|[12][0-9]|3[01])日 ([01][0-9]|2[0-3])時${minutes}分${seconds}秒$`
+        );
+      } else {
+        return new RegExp(
+          `^[0-9]{4}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\ ([01][0-9]|2[0-3]):${minutes}:${seconds}$`
+        );
+      }
     } else if (this.options.pickDate && this.options.pickTime) {
-      return new RegExp(`^[0-9]{4}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\ ([01][0-9]|2[0-3]):${minutes}$`);
+      if (this.options.formatMode === 1) {
+        return new RegExp(`^[0-9]{4}\年(0[1-9]|1[0-2])月(0[1-9]|[12][0-9]|3[01])日 ([01][0-9]|2[0-3])時${minutes}分$`);
+      } else {
+        return new RegExp(`^[0-9]{4}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\ ([01][0-9]|2[0-3]):${minutes}$`);
+      }
     } else if (this.options.pickDate && this.options.minViewMode === 1) {
-      return new RegExp('^[0-9]{4}/(0[1-9]|1[0-2])$');
+      if (this.options.formatMode === 1) {
+        return new RegExp('^[0-9]{4}年(0[1-9]|1[0-2])月$');
+      } else {
+        return new RegExp('^[0-9]{4}/(0[1-9]|1[0-2])$');
+      }
     } else if (this.options.pickDate && this.options.minViewMode === 2) {
-      return new RegExp('^[0-9]{4}$');
+      if (this.options.formatMode === 1) {
+        return new RegExp('^[0-9]{4}年$');
+      } else {
+        return new RegExp('^[0-9]{4}$');
+      }
     } else if (this.options.pickTime && this.options.showSeconds) {
-      return new RegExp(`^([01][0-9]|2[0-3]):${minutes}:${seconds}$`);
+      if (this.options.formatMode === 1) {
+        return new RegExp(`^([01][0-9]|2[0-3])時${minutes}分${seconds}秒$`);
+      } else {
+        return new RegExp(`^([01][0-9]|2[0-3]):${minutes}:${seconds}$`);
+      }
     } else if (this.options.pickDate) {
-      return new RegExp('^[0-9]{4}/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])$');
+      if (this.options.formatMode === 1) {
+        return new RegExp('^[0-9]{4}年(0[1-9]|1[0-2])月(0[1-9]|[12][0-9]|3[01])日$');
+      } else {
+        return new RegExp('^[0-9]{4}/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])$');
+      }
     } else {
-      return new RegExp(`^([01][0-9]|2[0-3]):${minutes}$`);
+      if (this.options.formatMode === 1) {
+        return new RegExp(`^([01][0-9]|2[0-3])時${minutes}分$`);
+      } else {
+        return new RegExp(`^([01][0-9]|2[0-3]):${minutes}$`);
+      }
     }
   }
 
@@ -229,39 +273,21 @@ export default class DateTimePicker {
     }
   }
 
-  parseStringToTime(timeString: string) {
-    let momentTime: Moment;
-    if (this.options.showSeconds) {
-      momentTime = moment(timeString, 'HH:mm:ss');
-    } else {
-      momentTime = moment(timeString, 'HH:mm');
-    }
-    if (momentTime.isValid()) {
-      this.currentDate.setHours(momentTime.toDate().getHours());
-      this.currentDate.setMinutes(momentTime.toDate().getMinutes());
-      this.currentDate.setSeconds(momentTime.toDate().getSeconds());
-    } else {
-      throw new Error('The time format set is incorrect.');
-    }
-  }
-
   // 日付以下切り捨て
-  truncateDate(date: Date) {
+  truncateTimeToDate(date: Date) {
     let year = date.getFullYear();
     let month = date.getMonth();
     let day = date.getDate();
     return new Date(year, month, day);
   }
 
-  // 秒・分数１桁台切り捨て
-  roundedTime(date: Date) {
+  // 時間以下切り捨て
+  truncateMinuteToDate(date: Date) {
     let year = date.getFullYear();
     let month = date.getMonth();
     let day = date.getDate();
     let hour = date.getHours();
-    let minutes = 0;
-    let seconds = 0;
-    return new Date(year, month, day, hour, minutes, seconds);
+    return new Date(year, month, day, hour);
   }
 
   // 日カレンダーのヘッダー、日曜～土曜を埋める処理
@@ -285,7 +311,7 @@ export default class DateTimePicker {
     for (let i = 0; i < 12; i++) {
       let html: HTMLElement = document.createElement('span');
       html.className = 'month';
-      html.textContent = this.JpDates.monthsShort[i];
+      html.textContent = this.JpDates.months[i];
       this.options.widget?.querySelector('.datepicker-months td')?.append(html);
     }
   }
@@ -348,7 +374,7 @@ export default class DateTimePicker {
       ) {
         clsName += ' new';
       }
-      if (prevMonth.valueOf() === this.truncateDate(this.currentDate).valueOf()) {
+      if (prevMonth.valueOf() === this.truncateTimeToDate(this.currentDate).valueOf()) {
         clsName += ' active';
       }
       if (this.options.minDate) {
@@ -548,53 +574,19 @@ export default class DateTimePicker {
           targetInput.value = insertValue;
           break;
         case 1:
-          targetInput.value = insertValue.slice(0, 7);
+          if (this.options.formatMode === 1) {
+            targetInput.value = insertValue.slice(0, 8);
+          } else {
+            targetInput.value = insertValue.slice(0, 7);
+          }
           break;
         case 2:
-          targetInput.value = insertValue.slice(0, 4);
+          if (this.options.formatMode === 1) {
+            targetInput.value = insertValue.slice(0, 5);
+          } else {
+            targetInput.value = insertValue.slice(0, 4);
+          }
           break;
-      }
-    }
-  }
-
-  // インスタンス作成の時Inputに値が入っているか
-  checkPreviousDateTimeValue() {
-    if (this.options.isInput) {
-      let inputTarget = this.options.element as HTMLInputElement;
-      if (inputTarget.value) {
-        let year = this.currentDate.getFullYear();
-        let month = this.currentDate.getMonth();
-        let day = this.currentDate.getDate();
-        let hour = this.currentDate.getHours();
-        let minutes = this.currentDate.getMinutes();
-        let seconds = this.currentDate.getSeconds();
-        if (this.options.pickDate && this.options.pickTime) {
-          year = Number(inputTarget.value.slice(0, 4));
-          month = Number(inputTarget.value.slice(5, 7));
-          day = Number(inputTarget.value.slice(8, 10));
-          hour = Number(inputTarget.value.slice(10, 13));
-          minutes = Number(inputTarget.value.slice(14, 16));
-          seconds = Number(inputTarget.value.slice(17, 19));
-        } else if (this.options.pickTime) {
-          hour = Number(inputTarget.value.slice(0, 2));
-          minutes = Number(inputTarget.value.slice(3, 5));
-          seconds = Number(inputTarget.value.slice(6, 8));
-        } else if (this.options.minViewMode === 1) {
-          year = Number(inputTarget.value.slice(0, 4));
-          month = Number(inputTarget.value.slice(5, 7));
-        } else if (this.options.minViewMode === 2) {
-          year = Number(inputTarget.value.slice(0, 4));
-        } else if (this.options.pickDate) {
-          year = Number(inputTarget.value.slice(0, 4));
-          month = Number(inputTarget.value.slice(5, 7));
-          day = Number(inputTarget.value.slice(8, 10));
-        }
-
-        let inputValue = new Date(year, month - 1, day, hour, minutes, seconds);
-        this.currentDate = new Date(inputValue);
-        this.viewDate = new Date(inputValue);
-        if (this.options.pickDate) this.fillDate();
-        if (this.options.pickTime) this.fillTime();
       }
     }
   }
@@ -610,7 +602,7 @@ export default class DateTimePicker {
     if (this.options.isInput) {
       this.options.element!.addEventListener('focus', this.focusEvent.bind(this));
       this.options.element!.addEventListener('focusout', this.focusoutEvent.bind(this));
-      this.options.element!.addEventListener('change', this.changeEvent.bind(this));
+      this.options.element!.addEventListener('change', this.validateAndUpdate.bind(this));
     }
   }
 
@@ -810,16 +802,38 @@ export default class DateTimePicker {
   focusEvent() {
     this.options.widget!.style.display = 'block';
     this.adjustPlace();
+    this.options.widget!.animate(
+      {
+        transform: ['translateY(-10px)', 'translateY(0px)'],
+        opacity: ['0', '1'],
+      },
+      {
+        duration: 200,
+        easing: 'ease-in-out',
+      }
+    );
+    if ((this.options.element as HTMLInputElement).value) this.validateAndUpdate();
     this.insertDateTimeIntoInput();
   }
 
   focusoutEvent() {
-    this.options.widget!.style.display = 'none';
+    this.options.widget!.animate(
+      {
+        transform: ['translateY(0px)', 'translateY(-10px)'],
+        opacity: ['1', '0'],
+      },
+      {
+        duration: 200,
+        easing: 'ease-in-out',
+      }
+    ).onfinish = () => {
+      this.options.widget!.style.display = 'none';
+    };
     this.showMode(-10);
     if (this.options.pickTime) this.showTimePicker(0);
   }
 
-  changeEvent() {
+  validateAndUpdate() {
     let target = this.options.element! as HTMLInputElement;
     let targetVal = target.value;
     // inputに入力された値が正規表現にマッチしなかった場合、選択されていた値に戻す
@@ -831,12 +845,21 @@ export default class DateTimePicker {
       let minutes = this.currentDate.getMinutes();
       let seconds = this.currentDate.getSeconds();
       if (this.options.pickDate && this.options.pickTime) {
-        year = Number(targetVal.slice(0, 4));
-        month = Number(targetVal.slice(5, 7));
-        day = Number(targetVal.slice(8, 10));
-        hour = Number(targetVal.slice(10, 13));
-        minutes = Number(targetVal.slice(14, 16));
-        seconds = Number(targetVal.slice(17, 19));
+        if (this.options.formatMode === 1) {
+          year = Number(targetVal.slice(0, 4));
+          month = Number(targetVal.slice(5, 7));
+          day = Number(targetVal.slice(8, 10));
+          hour = Number(targetVal.slice(12, 14));
+          minutes = Number(targetVal.slice(15, 17));
+          seconds = Number(targetVal.slice(18, 20));
+        } else {
+          year = Number(targetVal.slice(0, 4));
+          month = Number(targetVal.slice(5, 7));
+          day = Number(targetVal.slice(8, 10));
+          hour = Number(targetVal.slice(10, 13));
+          minutes = Number(targetVal.slice(14, 16));
+          seconds = Number(targetVal.slice(17, 19));
+        }
       } else if (this.options.pickTime) {
         hour = Number(targetVal.slice(0, 2));
         minutes = Number(targetVal.slice(3, 5));
@@ -851,7 +874,6 @@ export default class DateTimePicker {
         month = Number(targetVal.slice(5, 7));
         day = Number(targetVal.slice(8, 10));
       }
-
       // 入力欄に入力された日付で更新、期間外の場合は選択されていた値に戻す
       let inputDate: Date = new Date(year, month - 1, day, hour, minutes, seconds);
       if (this.options.minDate) {
@@ -1059,6 +1081,7 @@ export default class DateTimePicker {
 
   // インスタンス作成後にオプションを変更する場合に使用
   setOptions(options?: Partial<Options>) {
+    this.options.widget!.remove();
     this.init(this.options.element!, options);
   }
 }

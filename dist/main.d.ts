@@ -9,9 +9,9 @@ type Options = {
     minViewMode: number;
     weekStart: number;
     isInput: boolean;
+    formatMode: number;
     minDate?: any;
     maxDate?: any;
-    startTime?: any;
     element?: HTMLElement;
     widget?: HTMLElement;
     workingHolidays?: [string];
@@ -29,9 +29,8 @@ export default class DateTimePicker {
     formatDate(date: Date): string;
     createRegExp(): RegExp;
     parseStringToDate(dateString: string): Date;
-    parseStringToTime(timeString: string): void;
-    truncateDate(date: Date): Date;
-    roundedTime(date: Date): Date;
+    truncateTimeToDate(date: Date): Date;
+    truncateMinuteToDate(date: Date): Date;
     fillDow(): void;
     fillMonths(): void;
     fillDate(): void;
@@ -41,13 +40,12 @@ export default class DateTimePicker {
     fillSeconds(): void;
     fillTime(): void;
     insertDateTimeIntoInput(): void;
-    checkPreviousDateTimeValue(): void;
     attachPickerEvents(): void;
     clickEvent(e: Event): void;
     stopEvent(e: Event): void;
     focusEvent(): void;
     focusoutEvent(): void;
-    changeEvent(): void;
+    validateAndUpdate(): void;
     adjustPlace(): void;
     setTemplate(): HTMLElement;
     getTimePickerTemplate(): string;

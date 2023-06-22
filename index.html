@@ -20,18 +20,24 @@
         pickTime: false,
         startViewMode: 1,
         minViewMode: 1,
+        minDate: moment().startOf('year'),
+        maxDate: moment().endOf('year'),
+        formatMode: 1,
       };
 
       const timeOption = {
         pickDate: false,
         showSecond: false,
         minutesStep: 5,
+        formatMode: 1,
       };
 
       const dateOption = {
-        pickTime: false,
+        pickTime: true,
         minDate: moment().startOf('month'),
         maxDate: moment().endOf('month'),
+        minutesStep: 5,
+        formatMode: 1,
       };
 
       picker.forEach((e) => {
